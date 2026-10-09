@@ -79,7 +79,7 @@ extra_deps['dev'] = [
     'fastapi==0.116.1',
     'pydantic==2.12.5',
     'uvicorn==0.35.0',
-    'pytest-split==0.10.0',
+    'pytest-split==0.11.0',
     'pytest-timeout>=2.3,<3',
 ]
 
