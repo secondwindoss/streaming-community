@@ -87,7 +87,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -97,7 +97,6 @@ jobs:
         - "3.12"
         - "3.13"
         - "3.14"
-        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -111,7 +110,13 @@ jobs:
     - name: Run tests
       # Each group runs in its own process because shared memory is not fully cleaned up between tests.
       run: |
-        pytest --splits 11 --group ${{ matrix.group }} --cov-fail-under=10 --timeout=600
+        status=0
+        for group in $(seq 1 11); do
+          echo "::group::pytest group $group of 11"
+          pytest --splits 11 --group "$group" --cov-fail-under=10 --timeout=600 || status=1
+          echo "::endgroup::"
+        done
+        exit $status
 
   ci-ok:
     if: always()
