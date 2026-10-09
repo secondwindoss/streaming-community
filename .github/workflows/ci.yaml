@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: "3.10"
     - uses: actions/cache@v4
@@ -49,7 +49,7 @@ jobs:
     continue-on-error: true
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: "3.10"
     - name: Setup
@@ -74,7 +74,7 @@ jobs:
         - "3.14"
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python_version }}
     - name: Install with pip
@@ -108,7 +108,7 @@ jobs:
             --deselect=tests/test_util.py::test_merge_index_from_root_local
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python_version }}
     - name: Setup
