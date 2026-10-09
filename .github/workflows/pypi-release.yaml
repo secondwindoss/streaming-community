@@ -6,16 +6,12 @@ on:
     - "v*"
 
 jobs:
-  pre-commit:
-    uses: ./.github/workflows/linting.yaml
-
-  test:
-    uses: ./.github/workflows/pytest.yaml
+  ci:
+    uses: ./.github/workflows/ci.yaml
 
   build-n-publish:
     needs:
-    - pre-commit
-    - test
+    - ci
 
     name: Build and Publish mosaicml-streaming PyPI Package
     runs-on: ubuntu-latest

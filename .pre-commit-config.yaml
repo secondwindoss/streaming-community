@@ -94,7 +94,7 @@ repos:
     language: python
     types: [file, yaml]
 - repo: https://github.com/trufflesecurity/trufflehog.git
-  rev: v3.40.0
+  rev: v3.99.2
   hooks:
   - id: trufflehog
     name: secret scan

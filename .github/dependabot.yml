@@ -29,3 +29,7 @@ updates:
   - dependency-name: "sphinxcontrib-htmlhelp"
   - dependency-name: "sphinxcontrib-qthelp"
   - dependency-name: "sphinxcontrib-serializinghtml"
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "weekly"

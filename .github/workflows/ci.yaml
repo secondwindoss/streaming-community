@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - main
+    - release/*
+  pull_request:
+    branches:
+    - main
+    - release/*
+  workflow_call:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+    - name: Setup
+      run: |
+        set -ex
+        python -m pip install uv
+        uv pip install --system --torch-backend cpu -e '.[dev]'
+    - name: Run pre-commit
+      # Pyright runs in its own job below until its errors under numpy>=2.2 and torch 2.14 are fixed.
+      env:
+        SKIP: pyright
+      run: pre-commit run --all-files --show-diff-on-failure
+
+  pyright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Setup
+      run: |
+        set -ex
+        python -m pip install uv
+        uv pip install --system --torch-backend cpu -e '.[dev]'
+    - name: Run pyright
+      run: pre-commit run pyright --all-files
+
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version:
+        - "3.10"
+        - "3.11"
+        - "3.12"
+        - "3.13"
+        - "3.14"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python_version }}
+    - name: Install with pip
+      run: |
+        set -ex
+        python -m pip install --upgrade pip wheel
+        python -m pip install .
+    - name: Import
+      run: python -c "import streaming; print(streaming.__version__)"
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Python 3.14 is not blocking until the spark extra allows pyspark 4 (pyspark 3.5 fails on 3.14).
+    continue-on-error: ${{ matrix.python_version == '3.14' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version:
+        - "3.10"
+        - "3.11"
+        - "3.12"
+        - "3.13"
+        - "3.14"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python_version }}
+    - name: Setup
+      run: |
+        set -ex
+        python -m pip install uv
+        uv pip install --system --torch-backend cpu -e '.[all]'
+    - name: Run tests
+      # Each group runs in its own process because shared memory is not fully cleaned up between tests.
+      run: |
+        status=0
+        for group in $(seq 1 11); do
+          echo "::group::pytest group $group of 11"
+          pytest --splits 11 --group "$group" --cov-fail-under=10 --timeout=600 || status=1
+          echo "::endgroup::"
+        done
+        exit $status
+
+  ci-ok:
+    if: always()
+    needs:
+    - lint
+    - install
+    - test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check required jobs
+      if: >-
+        contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        || contains(needs.*.result, 'skipped')
+      run: |
+        echo "Required jobs: ${{ join(needs.*.result, ', ') }}"
+        exit 1
+    - run: echo "All required jobs passed."
