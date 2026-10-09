@@ -11,6 +11,14 @@ updates:
     interval: "weekly"
   # Allow up to 5 open pull requests for pip dependencies
   open-pull-requests-limit: 5
+  # One PR for all minor and patch bumps; major bumps still get their own PR.
+  groups:
+    pip-minor-patch:
+      patterns:
+      - "*"
+      update-types:
+      - "minor"
+      - "patch"
   ignore:
   - dependency-name: "GitPython"
   - dependency-name: "docutils"
@@ -33,3 +41,8 @@ updates:
   directory: "/"
   schedule:
     interval: "weekly"
+  # One PR for all action bumps.
+  groups:
+    github-actions:
+      patterns:
+      - "*"
