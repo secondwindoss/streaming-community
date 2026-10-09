@@ -80,6 +80,7 @@ extra_deps['dev'] = [
     'pydantic==2.11.7',
     'uvicorn==0.35.0',
     'pytest-split==0.10.0',
+    'pytest-timeout>=2.3,<3',
 ]
 
 extra_deps['docs'] = [
