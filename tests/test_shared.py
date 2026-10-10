@@ -16,8 +16,8 @@ from streaming.base import StreamingDataset
 from streaming.base.constant import LOCALS
 from streaming.base.shared import SharedArray, get_shm_prefix
 from streaming.base.shared.memory import SharedMemory
-from streaming.base.shared.prefix import (_SharedMemoryNotReady, _check_and_find, _get_path,
-                                          _pack_locals, _unpack_locals)
+from streaming.base.shared.prefix import (_check_and_find, _get_path, _pack_locals,
+                                          _SharedMemoryNotReady, _unpack_locals)
 from streaming.base.util import clean_stale_shared_memory
 from streaming.base.world import World
 from tests.common.utils import convert_to_mds

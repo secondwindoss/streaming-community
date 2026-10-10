@@ -25,9 +25,9 @@ from streaming.base.world import World
 class _SharedMemoryNotReady(Exception):
     """Follower attached before leader shm content was fully visible.
 
-    Dist barriers do not wait for OS SharedMemory propagation. Attach may
-    succeed while the packed locals buffer is still empty or inconsistent;
-    callers should retry with backoff instead of failing the job.
+    Dist barriers do not wait for OS SharedMemory propagation. Attach may succeed while the packed
+    locals buffer is still empty or inconsistent; callers should retry with backoff instead of
+    failing the job.
     """
 
 
