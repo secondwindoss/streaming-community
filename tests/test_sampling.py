@@ -43,14 +43,17 @@ def test_is_deterministic(use_epoch: bool):
 
 @pytest.mark.parametrize('use_epoch', [True, False])
 def test_balance(use_epoch: bool):
-    samples_per_shard = 1_000 + np.random.choice(1_000, 10)
+    # The bound below is statistical, so draw the shard sizes, the budget and the seeds from a
+    # fixed generator instead of the unseeded global one, which failed about one run in twenty.
+    rng = np.random.default_rng(31337)
+    samples_per_shard = 1_000 + rng.choice(1_000, 10)
     samples = sum(samples_per_shard)
-    choose = np.random.choice(samples)
+    choose = rng.choice(samples)
     choose_per_shard = np.zeros(len(samples_per_shard))
     for granularity in range(1, 100):
         for _ in range(10):
-            seed = np.random.choice(31337)
-            epoch = np.random.choice(42)
+            seed = rng.choice(31337)
+            epoch = rng.choice(42)
             choose_per_shard += get_sampling(samples_per_shard, choose, granularity, seed, epoch,
                                              use_epoch)
     choose_per_shard /= 99 * 10
