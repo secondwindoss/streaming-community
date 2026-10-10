@@ -20,7 +20,7 @@ Check out steps below for information on converting common Computer Vision datas
         └── validation
     ```
 
-3. Run the [ade20k.py](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/ade20k.py) script as shown below. The script converts the `train` and `val` dataset splits into their own directories. For advanced use cases, please see the supported arguments for [ade20k.py](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/ade20k.py) and modify according as necessary.
+3. Run the [ade20k.py](ade20k.py) script as shown below. The script converts the `train` and `val` dataset splits into their own directories. For advanced use cases, please see the supported arguments for [ade20k.py](ade20k.py) and modify according as necessary.
     <!--pytest.mark.skip-->
     ```
     python ade20k.py --in_root <Above directory> --out_root <local or remote directory path to save output MDS shard files>
@@ -28,7 +28,7 @@ Check out steps below for information on converting common Computer Vision datas
 
 ### [CIFAR10](https://www.cs.toronto.edu/~kriz/cifar.html)
 
-1. Run the [cifar10.py](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/cifar10.py) script as shown below. The CIFAR10 dataset will be automatically downloaded if it doesn't exist locally. For advanced use cases, please see the supported arguments for [cifar10.py](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/cifar10.py) and modify as necessary.
+1. Run the [cifar10.py](cifar10.py) script as shown below. The CIFAR10 dataset will be automatically downloaded if it doesn't exist locally. For advanced use cases, please see the supported arguments for [cifar10.py](cifar10.py) and modify as necessary.
     <!--pytest.mark.skip-->
     ```
     python cifar10.py --in_root <Above directory> --out_root <local or remote directory path to save output MDS shard files>
@@ -67,7 +67,7 @@ Check out steps below for information on converting common Computer Vision datas
     |   |── ...
     ```
 
-2. Run the [coco.py](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/coco.py) script as shown below. The script converts the `train` and `val` dataset splits into their own directories. For advanced use cases, please seet the supported arguments for [coco.py](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/coco.py) and modify as necessary.
+2. Run the [coco.py](coco.py) script as shown below. The script converts the `train` and `val` dataset splits into their own directories. For advanced use cases, please seet the supported arguments for [coco.py](coco.py) and modify as necessary.
     <!--pytest.mark.skip-->
     ```
     python coco.py --in_root <Above directory> --out_root <local or remote directory path to save output MDS shard files>
@@ -106,7 +106,7 @@ Check out steps below for information on converting common Computer Vision datas
       ├── ......
     ```
 
-2. Run the [imagenet.py](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/imagenet.py) script as shown below. The script converts the `train` and `val` dataset splits into their own directories. For advanced uses cases, please see the supported arguments for [imagenet.py](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/imagenet.py) and modify as needed.
+2. Run the [imagenet.py](imagenet.py) script as shown below. The script converts the `train` and `val` dataset splits into their own directories. For advanced uses cases, please see the supported arguments for [imagenet.py](imagenet.py) and modify as needed.
     <!--pytest.mark.skip-->
     ```
     python imagenet.py --in_root <Above directory> --out_root <local or remote directory path to save output MDS shard files>

@@ -3,6 +3,10 @@
 
 """MosaicML Streaming Datasets for cloud-native model training."""
 
+from streaming import _install_check
+
+_install_check.warn_if_conflicting_install()
+
 import streaming.multimodal as multimodal
 import streaming.text as text
 import streaming.vision as vision

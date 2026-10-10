@@ -189,7 +189,7 @@ All imports in Streaming should be absolute -- that is, they do not begin with a
 1.  If a dependency is not core to Streaming (e.g. it is for a model, dataset, or some callbacks):
     1.  It must be specified in a entry of the `extra_deps` dictionary of [setup.py](setup.py).
         This dictionary groups dependencies that can be conditionally installed. An entry named `foo`
-        can be installed with `pip install 'mosaicml-streaming[foo]'`. For example, running `pip install 'mosaicml-streaming[docs]'`
+        can be installed with `pip install 'streaming-community[foo]'`. For example, running `pip install 'streaming-community[docs]'`
         will install everything in `install_requires`, along with `docs`.
     1.  It must also be specified in the `run_constrained` and the `test.requires` section.
     1.  If the dependency is core to Streaming, add the dependency to the `install_requires` section of

@@ -217,7 +217,7 @@ def get_import_exception_message(package_name: str, extra_deps: str) -> str:
     """
     return f'Streaming was installed without {package_name} support. ' + \
             f'To use {package_name} related packages with Streaming, run ' + \
-            f'`pip install \'mosaicml-streaming[{package_name}]\'`.'
+            f'`pip install \'streaming-community[{package_name}]\'`.'
 
 
 def merge_index(*args: Any, **kwargs: Any):

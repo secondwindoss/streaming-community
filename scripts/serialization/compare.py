@@ -5,7 +5,7 @@
 
 Serialization methods compared:
 * Arrow https://arrow.apache.org/
-* MDS https://github.com/mosaicml/streaming
+* MDS https://github.com/secondwindoss/streaming-community
 * Parquet https://parquet.apache.org/
 
 We generate datasets containing identical samples in each format, and compare the time it takes to

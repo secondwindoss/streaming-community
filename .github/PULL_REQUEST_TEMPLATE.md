@@ -25,9 +25,9 @@ _Put an `x` without space in the boxes that apply. If you are unsure about any c
 - [ ] I have updated any necessary documentation, including [README](https://github.com/secondwindoss/streaming-community/blob/main/README.md) and [API docs](https://github.com/secondwindoss/streaming-community/tree/main/docs) (if appropriate).
 
 ### Tests
-- [ ] I ran `pre-commit` on my change. (check out the `pre-commit` section of [prerequisites](https://github.com/secondwindoss/streaming-community/blob/main/CONTRIBUTING.md#prerequisites))
+- [ ] I ran `pre-commit` on my change. (check out [setting up](https://github.com/secondwindoss/streaming-community/blob/main/CONTRIBUTING.md#setting-up))
 - [ ] I have added tests that prove my fix is effective or that my feature works (if appropriate).
-- [ ] I ran the tests locally to make sure it pass. (check out [testing](https://github.com/secondwindoss/streaming-community/blob/main/CONTRIBUTING.md#submitting-a-contribution))
+- [ ] I ran the tests locally to make sure it pass. (check out [running tests](https://github.com/secondwindoss/streaming-community/blob/main/CONTRIBUTING.md#running-tests))
 - [ ] I have added unit and/or integration tests as appropriate to ensure backward compatibility of the changes.
 
 <!--
