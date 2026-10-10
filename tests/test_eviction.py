@@ -1,8 +1,10 @@
 # Copyright 2022-2024 MosaicML Streaming authors
 # SPDX-License-Identifier: Apache-2.0
 
+import multiprocessing as mp
 import operator
 import os
+import pickle
 from shutil import copytree, rmtree
 from typing import Any
 
@@ -260,8 +262,9 @@ def test_cache_filelock_reuse(local_remote_dir: tuple[str, str]):
     dataset = StreamingDataset(remote=remote, local=local, batch_size=1)
 
     # First call to prepare_shard should create the filelock
+    assert dataset._cache_filelock is None
     dataset.prepare_shard(0)
-    assert hasattr(dataset, '_cache_filelock'), 'Expected _cache_filelock to be created'
+    assert dataset._cache_filelock is not None, 'Expected _cache_filelock to be created'
 
     # Store reference to the filelock object
     first_filelock = dataset._cache_filelock
@@ -289,6 +292,38 @@ def test_cache_filelock_reuse(local_remote_dir: tuple[str, str]):
             'Expected _cache_filelock to be reused in evict_shard'
 
     rmtree(local, ignore_errors=False)
+
+
+def _prepare_and_evict(dataset: StreamingDataset, shard_id: int) -> None:
+    dataset.prepare_shard(shard_id)
+    dataset.evict_shard(shard_id)
+
+
+@pytest.mark.skipif('fork' not in mp.get_all_start_methods(), reason='Requires fork.')
+@pytest.mark.usefixtures('local_remote_dir')
+def test_cache_filelock_used_before_fork(local_remote_dir: tuple[str, str]):
+    """A forked child must not fail on a cache filelock the parent created and used."""
+    local, remote = local_remote_dir
+    convert_to_mds(out_root=remote,
+                   dataset_name='sequencedataset',
+                   num_samples=117,
+                   size_limit=1 << 8)
+    dataset = StreamingDataset(remote=remote, local=local, batch_size=1)
+    assert dataset.num_shards > 1
+
+    # Create and use the cache filelock in the parent.
+    dataset.prepare_shard(0)
+    assert dataset._cache_filelock is not None
+
+    # The dataset must still pickle for spawn and forkserver workers.
+    pickle.dumps(dataset)
+
+    # A forked child inherits the parent's lock object, and must replace it with its own.
+    p = mp.get_context('fork').Process(target=_prepare_and_evict, args=(dataset, 1))
+    p.start()
+    p.join(60)
+    p.terminate()
+    assert p.exitcode == 0
 
 
 def test_evict_coldest_skips_local_only_stream(tmp_path: Any):
