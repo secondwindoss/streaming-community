@@ -665,6 +665,16 @@ def test_dataloader_fixed_balanced_sampling(local_remote_dir: Any, batch_size: i
             assert samples_seen != first_samples_seen
 
 
+def _run_one_iter(local: str, remote: str, seed: int) -> None:
+    # Build a StreamingDataset
+    dataset = StreamingDataset(local=local, remote=remote, shuffle_seed=seed, batch_size=1)
+
+    # Do one iteration
+    it = iter(dataset)
+    next(it)
+    # Test if we can exit...
+
+
 @pytest.mark.parametrize('num_samples', [9867])
 @pytest.mark.parametrize('seed', [1234])
 @pytest.mark.usefixtures('local_remote_dir')
@@ -672,18 +682,11 @@ def test_dataloader_mid_epoch_exit(local_remote_dir: tuple[str, str], num_sample
     local, remote = local_remote_dir
     convert_to_mds(out_root=remote, dataset_name='sequencedataset', num_samples=num_samples)
 
-    def run_one_iter(local: str, remote: str, seed: int) -> None:
-        # Build a StreamingDataset
-        dataset = StreamingDataset(local=local, remote=remote, shuffle_seed=seed, batch_size=1)
-
-        # Do one iteration
-        it = iter(dataset)
-        next(it)
-        # Test if we can exit...
-
-    p = Process(target=run_one_iter, args=(local, remote, seed))
+    # Module-level target, so it pickles under the forkserver and spawn start methods.
+    p = Process(target=_run_one_iter, args=(local, remote, seed))
     p.start()
-    p.join(5)
+    # Spawned children re-import torch, which can take several seconds on CI.
+    p.join(30)
     p.terminate()
 
     result = p.exitcode
