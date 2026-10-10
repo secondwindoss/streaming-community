@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import math
+import multiprocessing as mp
 import os
 import shutil
 from multiprocessing import Process
@@ -692,6 +693,26 @@ def test_dataloader_mid_epoch_exit(local_remote_dir: tuple[str, str], num_sample
     result = p.exitcode
 
     assert result == 0
+
+
+@pytest.mark.skipif('fork' not in mp.get_all_start_methods(), reason='Requires fork.')
+@pytest.mark.usefixtures('local_remote_dir')
+def test_dataloader_fork_after_parent_use(local_remote_dir: tuple[str, str]):
+    """Forked workers must not fail on a cache filelock the parent created by using the dataset."""
+    local, remote = local_remote_dir
+    convert_to_mds(out_root=remote, dataset_name='sequencedataset', num_samples=117)
+    dataset = StreamingDataset(local=local, remote=remote, shuffle=False, batch_size=2)
+
+    # Downloading the first shard in the parent takes the cache filelock.
+    dataset[0]
+    assert dataset._cache_filelock is not None
+
+    dataloader = DataLoader(dataset=dataset,
+                            batch_size=2,
+                            num_workers=2,
+                            multiprocessing_context=mp.get_context('fork'))
+    samples_seen = sum(batch['sample'].size(dim=0) for batch in dataloader)
+    assert samples_seen == 117
 
 
 @pytest.mark.parametrize('batch_size', [4])

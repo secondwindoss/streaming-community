@@ -3,8 +3,8 @@
 
 import multiprocessing as mp
 import os
+import pickle
 import re
-from importlib.metadata import version
 from multiprocessing.managers import ListProxy
 from random import random
 from time import sleep
@@ -13,9 +13,6 @@ from typing import Any
 import pytest
 
 from streaming.base.shared import SharedArray, SharedBarrier
-
-# filelock 4 raises when a FileLock created in the parent is used in a forked child.
-FILELOCK_4 = int(version('filelock').split('.')[0]) >= 4
 
 
 class TestSharedBarrier:
@@ -50,9 +47,6 @@ class TestSharedBarrier:
         barrier(num_process)
         shared_list.append(f'passed barrier again: {mp.current_process().name}')
 
-    @pytest.mark.xfail(FILELOCK_4,
-                       strict=True,
-                       reason='filelock>=4 rejects locks inherited across fork.')
     @pytest.mark.parametrize('num_process', [2, 3])
     @pytest.mark.parametrize('filelock_root', ['/tmp/dir/'])
     def test_barrier(self, num_process: int, filelock_root: str):
@@ -77,3 +71,33 @@ class TestSharedBarrier:
             expected_log_message[i + (2 * num_process)] = f'passed barrier again: Process-\\d+'
 
         assert re.fullmatch(' '.join(expected_log_message), ' '.join(shared_list))
+
+    @pytest.mark.skipif('fork' not in mp.get_all_start_methods(), reason='Requires fork.')
+    @pytest.mark.parametrize('num_process', [2])
+    def test_barrier_lock_used_before_fork(self, num_process: int, tmp_path: Any):
+        """Forked children must not fail on a lock the parent created and used."""
+        ctx = mp.get_context('fork')
+        manager = ctx.Manager()
+        shared_list = manager.list()
+        barrier = SharedBarrier(str(tmp_path / 'filelock_path'), 'barrier_shm_name')
+
+        # Create and use the lock in the parent.
+        with barrier.lock:
+            pass
+        assert barrier.lock is barrier.lock
+
+        # The barrier must still pickle for spawn and forkserver workers.
+        pickle.dumps(barrier)
+
+        processes = [
+            ctx.Process(target=self.run, args=(num_process, barrier, shared_list))
+            for _ in range(num_process)
+        ]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join(60)
+            p.terminate()
+
+        assert [p.exitcode for p in processes] == [0] * num_process
+        assert len(shared_list) == 3 * num_process

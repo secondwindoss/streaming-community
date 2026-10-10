@@ -543,7 +543,7 @@ class StreamingDataset(Array, IterableDataset):
         self._filelock_root = gettempdir()
         os.makedirs(self._filelock_root, exist_ok=True)
 
-        # Create the shared memory-backed barrier, without its lock, which is unpickleable.
+        # Create the shared memory-backed barrier.
         self._shared_barrier = SharedBarrier(
             os.path.join(self._filelock_root, _get_path(self._shm_prefix_int, BARRIER_FILELOCK)),
             _get_path(self._shm_prefix_int, BARRIER))
@@ -555,10 +555,12 @@ class StreamingDataset(Array, IterableDataset):
         # to track what the next epoch is, not the current epoch.
         self._next_epoch = SharedScalar(np.int64, _get_path(self._shm_prefix_int, NEXT_EPOCH))
 
-        # Cache filelock. Protects downloading and evicting shards.
+        # Cache filelock. Protects downloading and evicting shards. The lock itself is created per
+        # process by _get_cache_filelock().
         self._cache_filelock_path = os.path.join(self._filelock_root,
                                                  _get_path(self._shm_prefix_int, CACHE_FILELOCK))
-        self._cache_filelock: FileLock
+        self._cache_filelock: Optional[FileLock] = None
+        self._cache_filelock_pid: Optional[int] = None
 
         # Cache usage in bytes.
         self._cache_usage = SharedScalar(np.int64, _get_path(self._shm_prefix_int, CACHE_USAGE))
@@ -614,9 +616,6 @@ class StreamingDataset(Array, IterableDataset):
         self._executor: ThreadPoolExecutor
         self._event: Event
 
-        # Remote the lock that makes it unpickleable.
-        del self._shared_barrier.lock
-
     def __del__(self) -> None:
         """Destructor, which releases its local working directories."""
         if hasattr(self, '_locals_shm'):
@@ -624,6 +623,17 @@ class StreamingDataset(Array, IterableDataset):
                 self._locals_shm.buf[:4] = np.int32(0).tobytes()
             except:
                 pass
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Get the state to pickle, which leaves out the unpicklable cache filelock.
+
+        Returns:
+            Dict[str, Any]: The picklable state.
+        """
+        state = self.__dict__.copy()
+        state['_cache_filelock'] = None
+        state['_cache_filelock_pid'] = None
+        return state
 
     @property
     def size(self) -> int:
@@ -757,11 +767,6 @@ class StreamingDataset(Array, IterableDataset):
         Returns:
             Tuple[int, int]: What epoch this is, and sample offset in that epoch.
         """
-        # Lazily create the shared barrier's FileLock, which contains a threading Lock, which is
-        # unpickleable.
-        if not hasattr(self._shared_barrier, 'lock'):
-            self._shared_barrier.lock = FileLock(self._shared_barrier.filelock_path)
-
         # Either resume from checkpoint, or start from scratch.
         presumed_epoch = self.next_epoch
         epoch, sample_in_epoch = self._resume(self._parallel_worker_world, presumed_epoch)
@@ -1019,11 +1024,6 @@ class StreamingDataset(Array, IterableDataset):
         Returns:
             Optional[NDArray[np.int64]]: Our partition of the epoch.
         """
-        # Lazily create the shared barrier's FileLock, which contains a threading Lock, which is
-        # unpickleable.
-        if not hasattr(self._shared_barrier, 'lock'):
-            self._shared_barrier.lock = FileLock(self._shared_barrier.filelock_path)
-
         u_world = self._unique_worker_world
         p_world = self._parallel_worker_world
 
@@ -1126,6 +1126,22 @@ class StreamingDataset(Array, IterableDataset):
         # Evict that shard.
         self._evict_shard(coldest_shard_id)
 
+    def _get_cache_filelock(self) -> FileLock:
+        """Get the cache filelock of the current process.
+
+        A FileLock holds a threading lock, so it cannot be pickled, and filelock 3.31+ refuses to
+        acquire a lock in any process other than the one that created it. So each process creates
+        its own lock on first use, and a lock inherited across fork is replaced.
+
+        Returns:
+            FileLock: The cache filelock.
+        """
+        pid = os.getpid()
+        if self._cache_filelock is None or self._cache_filelock_pid != pid:
+            self._cache_filelock = FileLock(self._cache_filelock_path)
+            self._cache_filelock_pid = pid
+        return self._cache_filelock
+
     def evict_shard(self, shard_id: int) -> None:
         """Evict the given shard.
 
@@ -1134,12 +1150,7 @@ class StreamingDataset(Array, IterableDataset):
         Args:
             shard_id (int): Shard to evict.
         """
-        # Lock the cache. FileLocks contain threading Locks, which are not pickleable, which is
-        # incompatible with spawn, so must be created lazily.
-        if not hasattr(self, '_cache_filelock'):
-            self._cache_filelock = FileLock(self._cache_filelock_path)
-
-        with self._cache_filelock:
+        with self._get_cache_filelock():
             self._evict_shard(shard_id)
 
     def evict_coldest_shard(self) -> None:
@@ -1147,12 +1158,7 @@ class StreamingDataset(Array, IterableDataset):
 
         This method is multithread/multiprocess-safe.
         """
-        # Lock the cache. FileLocks contain threading Locks, which are not pickleable, which is
-        # incompatible with spawn, so must be created lazily.
-        if not hasattr(self, '_cache_filelock'):
-            self._cache_filelock = FileLock(self._cache_filelock_path)
-
-        with self._cache_filelock:
+        with self._get_cache_filelock():
             self._evict_coldest_shard()
 
     def prepare_shard(self, shard_id: int, blocking: bool = True) -> None:
@@ -1168,11 +1174,7 @@ class StreamingDataset(Array, IterableDataset):
             blocking (bool): Whether to wait or skip if the shard is currently being downloaded by
                 someone else.
         """
-        # Lock the cache. FileLocks contain threading Locks, which are not pickleable, which is
-        # incompatible with spawn, so must be created lazily.
-        if not hasattr(self, '_cache_filelock'):
-            self._cache_filelock = FileLock(self._cache_filelock_path)
-        lock = self._cache_filelock
+        lock = self._get_cache_filelock()
         lock.acquire()
 
         # Get the state of the shard to download.
