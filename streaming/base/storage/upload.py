@@ -11,7 +11,7 @@ import sys
 import urllib.parse
 from enum import Enum
 from tempfile import mkdtemp
-from typing import Any, Optional, Union
+from typing import IO, Any, Optional, Union, cast
 
 import tqdm
 
@@ -105,12 +105,13 @@ class CloudUploader:
         Returns:
             CloudUploader: An instance of sub-class.
         """
-        cls._validate(cls, out)
+        cls._validate(out)
         provider_prefix = _provider_prefix(out if isinstance(out, str) else out[1])
         return getattr(sys.modules[__name__],
                        UPLOADERS[provider_prefix])(out, keep_local, progress_bar, retry, exist_ok)
 
-    def _validate(self, out: Union[str, tuple[str, str]]) -> None:
+    @staticmethod
+    def _validate(out: Union[str, tuple[str, str]]) -> None:
         """Validate the `out` argument.
 
         Args:
@@ -255,16 +256,17 @@ class S3Uploader(CloudUploader):
                  exist_ok: bool = False) -> None:
         super().__init__(out, keep_local, progress_bar, retry, exist_ok)
 
-        import boto3
+        from boto3.session import Session
         from botocore.config import Config
 
         config = Config()
         # Create a session and use it to make our client. Unlike Resources and Sessions,
         # clients are generally thread-safe.
-        session = boto3.session.Session()
-        self.s3 = session.client('s3',
-                                 config=config,
-                                 endpoint_url=os.environ.get('S3_ENDPOINT_URL'))
+        session = Session()
+        # boto3 generates its clients at runtime, so there is nothing to type.
+        self.s3: Any = session.client('s3',
+                                      config=config,
+                                      endpoint_url=os.environ.get('S3_ENDPOINT_URL'))
         self.check_bucket_exists(self.remote)  # pyright: ignore
 
     def upload_file(self, filename: str):
@@ -376,12 +378,13 @@ class GCSUploader(CloudUploader):
                  exist_ok: bool = False) -> None:
         super().__init__(out, keep_local, progress_bar, retry, exist_ok)
         if 'GCS_KEY' in os.environ and 'GCS_SECRET' in os.environ:
-            import boto3
+            from boto3.session import Session
 
             # Create a session and use it to make our client. Unlike Resources and Sessions,
             # clients are generally thread-safe.
-            session = boto3.session.Session()
-            self.gcs_client = session.client(
+            session = Session()
+            # A boto3 S3 client here, a ``google.cloud.storage.Client`` below: too dynamic to type.
+            self.gcs_client: Any = session.client(
                 's3',
                 region_name='auto',
                 endpoint_url='https://storage.googleapis.com',
@@ -527,7 +530,8 @@ class OCIUploader(CloudUploader):
         import oci
 
         config = oci.config.from_file()
-        self.client = oci.object_storage.ObjectStorageClient(
+        # The oci SDK is untyped and pyright infers its calls as Optional, so the client is Any.
+        self.client: Any = oci.object_storage.ObjectStorageClient(
             config=config, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY)
         self.namespace = self.client.get_namespace().data
         self.upload_manager = oci.object_storage.UploadManager(self.client)
@@ -685,7 +689,7 @@ class HFUploader(CloudUploader):
             remote_filename = remote_filename.replace('\\', '/')
             logger.debug(f'Uploading to {remote_filename}')
 
-            with self.fs.open(remote_filename, 'wb') as f:
+            with cast(IO[bytes], self.fs.open(remote_filename, 'wb')) as f:
                 with open(local_filename, 'rb') as data:
                     f.write(data.read())
 
@@ -788,12 +792,15 @@ class AzureUploader(CloudUploader):
                            unit_scale=True,
                            desc=f'Uploading to {remote_filename}',
                            disable=(not self.progress_bar)) as pbar:
+
+                def on_progress(bytes_transferred: int, _: Optional[int]) -> None:
+                    pbar.update(bytes_transferred)
+
                 with open(local_filename, 'rb') as data:
-                    container_client.upload_blob(
-                        name=obj.path.lstrip('/'),
-                        data=data,
-                        progress_hook=lambda bytes_transferred, _: pbar.update(bytes_transferred),
-                        overwrite=True)
+                    container_client.upload_blob(name=obj.path.lstrip('/'),
+                                                 data=data,
+                                                 progress_hook=on_progress,
+                                                 overwrite=True)
             self.clear_local(local=local_filename)
 
         _upload_file()

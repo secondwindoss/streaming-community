@@ -10,7 +10,7 @@ import os
 from contextlib import contextmanager
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Generic, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, Sequence, TypeVar, Union, cast
 
 import catalogue
 
@@ -44,7 +44,7 @@ class TypedRegistry(catalogue.Registry, Generic[T]):
         return super().__call__(name, func)
 
     def register(self, name: str, *, func: Optional[T] = None) -> T:
-        return super().register(name, func=func)
+        return cast(T, super().register(name, func=func))
 
     def register_class(
         self,
@@ -52,7 +52,7 @@ class TypedRegistry(catalogue.Registry, Generic[T]):
         *,
         func: Optional[TypeBoundT] = None,
     ) -> TypeBoundT:
-        return super().register(name, func=func)
+        return cast(TypeBoundT, super().register(name, func=func))
 
     def get(self, name: str) -> T:
         return super().get(name)
@@ -134,7 +134,7 @@ def construct_from_registry(
                 raise ValueError(
                     f'Expected {name} to be of type {pre_validation_function}, but got {type(registered_constructor)}',
                 )
-        elif isinstance(pre_validation_function, Callable):
+        elif callable(pre_validation_function):
             pre_validation_function(registered_constructor)
         else:
             raise ValueError(

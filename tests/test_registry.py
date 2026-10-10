@@ -4,7 +4,7 @@
 import importlib.metadata
 import pathlib
 from importlib.metadata import EntryPoint
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, cast
 
 import catalogue
 import pytest
@@ -141,7 +141,8 @@ def test_registry_builder(monkeypatch: pytest.MonkeyPatch):
         'streaming',
         'test_registry',
         entry_points=False,
-        generic_type=Union[type[Stream], Callable[..., Stream]],
+        # A Union is not a ``type``, so spell out the generic argument for pyright.
+        generic_type=cast(type[Any], Union[type[Stream], Callable[..., Stream]]),
     )
 
     class TestStream(Stream):

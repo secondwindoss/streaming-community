@@ -98,7 +98,7 @@ def all_gather_object(obj: TObj) -> list[TObj]:
         List[TObj]: A list of objects indexed by rank.
     """
     if dist.is_available() and dist.is_initialized():
-        obj_gather_list = [0 for _ in range(get_world_size())]
+        obj_gather_list: list[object] = [0 for _ in range(get_world_size())]
         dist.all_gather_object(obj_gather_list, obj)
         # torch.distributed will replace the None's in obj_gather_list with the gathered objects on
         # rank zero or will just be None on non-rank-zero.
