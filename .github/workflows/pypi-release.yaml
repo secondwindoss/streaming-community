@@ -1,44 +1,109 @@
-name: Publish mosaicml-streaming to PyPI
+name: Publish to PyPI
+
+# Pushing a tag vX.Y.Z that matches streaming/_version.py builds, checks and publishes the release to PyPI.
+# A manual run publishes the same build to TestPyPI instead, as a dry run that needs no tag.
+# Both publish jobs use PyPI trusted publishing through the GitHub environments below; no API token is stored.
 
 on:
   push:
     tags:
     - "v*"
+  workflow_dispatch:
+    inputs:
+      testpypi:
+        description: Publish the build to TestPyPI as a dry run
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
 
 jobs:
   ci:
     uses: ./.github/workflows/ci.yaml
 
-  build-n-publish:
+  build:
     needs:
     - ci
-
-    name: Build and Publish mosaicml-streaming PyPI Package
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout source
-      uses: actions/checkout@v7
+    - uses: actions/checkout@v7
 
-    - name: Set up Python
-      uses: actions/setup-python@v7
+    - uses: actions/setup-python@v7
       with:
-        python-version: "3.x"
+        python-version: "3.12"
+
+    - name: Install build tools
+      run: python -m pip install --upgrade build twine
+
+    - name: Check that the tag matches streaming/_version.py
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        version="$(python -c '
+        import ast, pathlib
+        tree = ast.parse(pathlib.Path("streaming/_version.py").read_text())
+        for node in tree.body:
+            if isinstance(node, ast.Assign) and ast.unparse(node.targets[0]) == "__version__":
+                print(ast.literal_eval(node.value))
+        ')"
+        if [ -z "$version" ]; then
+          echo "::error::Could not read __version__ from streaming/_version.py."
+          exit 1
+        fi
+        if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+          echo "::error::Tag $GITHUB_REF_NAME does not match streaming/_version.py (__version__ = '$version')." \
+            "Tag v$version instead, or bump the version first."
+          exit 1
+        fi
+        echo "Tag $GITHUB_REF_NAME matches streaming/_version.py ($version)."
 
     - name: Build source and wheel distributions
       run: |
-        python -m pip install --upgrade build twine
         python -m build
         twine check --strict dist/*
 
-    # - name: Publish distribution 📦 to Test PyPI
-    #   uses: pypa/gh-action-pypi-publish@release/v1
-    #   with:
-    #     user: __token__
-    #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-    #     repository_url: https://test.pypi.org/legacy/
-
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+    - uses: actions/upload-artifact@v7
       with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
+        name: dist
+        path: dist/
+        if-no-files-found: error
+
+  publish-testpypi:
+    needs:
+    - build
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.testpypi
+      && github.repository == 'secondwindoss/streaming-community'
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/streaming-community
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
+
+    - uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    needs:
+    - build
+    if: startsWith(github.ref, 'refs/tags/v') && github.repository == 'secondwindoss/streaming-community'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/streaming-community
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
+
+    - uses: pypa/gh-action-pypi-publish@release/v1
