@@ -6,7 +6,9 @@
 Implemented with shared array and a filelock.
 """
 
+import os
 from time import sleep
+from typing import Any, Optional
 
 import numpy as np
 from filelock import FileLock
@@ -31,15 +33,44 @@ class SharedBarrier:
     """
 
     def __init__(self, filelock_path: str, shm_name: str) -> None:
-        # Create lock.
+        # The lock itself is created per process by the ``lock`` property.
         self.filelock_path = filelock_path
-        self.lock = FileLock(self.filelock_path)
+        self._lock: Optional[FileLock] = None
+        self._lock_pid: Optional[int] = None
 
         # Create three int32 fields in shared memory: num_enter, num_exit, flag.
         self._arr = SharedArray(3, np.int32, shm_name)
         self.num_enter = 0
         self.num_exit = -1
         self.flag = True
+
+    @property
+    def lock(self) -> FileLock:
+        """Get the file lock of the current process.
+
+        A FileLock holds a threading lock, so it cannot be pickled, and filelock 3.31+ refuses to
+        acquire a lock in any process other than the one that created it. So each process creates
+        its own lock on first use, and a lock inherited across fork is replaced.
+
+        Returns:
+            FileLock: The file lock.
+        """
+        pid = os.getpid()
+        if self._lock is None or self._lock_pid != pid:
+            self._lock = FileLock(self.filelock_path)
+            self._lock_pid = pid
+        return self._lock
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Get the state to pickle, which leaves out the unpicklable file lock.
+
+        Returns:
+            Dict[str, Any]: The picklable state.
+        """
+        state = self.__dict__.copy()
+        state['_lock'] = None
+        state['_lock_pid'] = None
+        return state
 
     @property
     def num_enter(self) -> int:
