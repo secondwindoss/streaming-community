@@ -75,11 +75,11 @@ class Array:
 
         yield from range(start, stop, step)
 
-    def __getitem__(self, at: Union[int, slice, list[int], NDArray[np.int64]]) -> Any:
+    def __getitem__(self, at: Union[int, slice, list[Any], NDArray[np.int64]]) -> Any:
         """Get item(s) by index, slice, int list, or numpy array.
 
         Args:
-            at (int | slice | List[int] | NDArray[np.int64]): Sample index(es).
+            at (int | slice | list[Any] | NDArray[np.int64]): Sample index(es); a list may be nested.
 
         Returns:
             Any: An item if passed an int, or recursive int list(s) of items otherwise.

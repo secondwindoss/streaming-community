@@ -125,8 +125,8 @@ class TestCloudUploader:
     @pytest.mark.parametrize('out', ['s3://bucket/dir', 'gs://bucket/dir'])
     @pytest.mark.usefixtures('gcs_hmac_credentials')
     def test_check_bucket_exists_exception(self, out: str):
-        import botocore
-        with pytest.raises(botocore.exceptions.ClientError):
+        from botocore.exceptions import ClientError
+        with pytest.raises(ClientError):
             _ = CloudUploader.get(out=out)
 
     @patch('streaming.base.storage.LocalUploader.list_objects')
@@ -198,9 +198,9 @@ class TestS3Uploader:
 
     @pytest.mark.parametrize('out', ['s3://bucket/dir'])
     def test_check_bucket_exists_exception(self, out: str):
-        import botocore
+        from botocore.exceptions import ClientError
 
-        with pytest.raises(botocore.exceptions.ClientError):
+        with pytest.raises(ClientError):
             _ = S3Uploader(out=out)
 
     @pytest.mark.usefixtures('s3_client', 's3_test', 'remote_local_dir')
@@ -318,9 +318,9 @@ class TestGCSUploader:
     @pytest.mark.usefixtures('gcs_hmac_credentials')
     @pytest.mark.parametrize('out', ['gs://bucket/dir'])
     def test_check_bucket_exists_exception(self, out: str):
-        import botocore
+        from botocore.exceptions import ClientError
 
-        with pytest.raises(botocore.exceptions.ClientError):
+        with pytest.raises(ClientError):
             _ = GCSUploader(out=out)
 
     @patch('streaming.base.storage.upload.GCSUploader.check_bucket_exists')

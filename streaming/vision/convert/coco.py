@@ -6,7 +6,7 @@
 import json
 import os
 from argparse import ArgumentParser, Namespace
-from typing import Iterable
+from typing import Any, Iterable
 
 import numpy as np
 import torch
@@ -153,7 +153,7 @@ class _COCODetection(Dataset):
         return img, img_id, (htot, wtot), bbox_sizes, bbox_labels
 
 
-def each(dataset: _COCODetection, shuffle: bool) -> Iterable[dict[str, bytes]]:
+def each(dataset: _COCODetection, shuffle: bool) -> Iterable[dict[str, Any]]:
     """Generator over each dataset sample.
 
     Args:
@@ -161,14 +161,14 @@ def each(dataset: _COCODetection, shuffle: bool) -> Iterable[dict[str, bytes]]:
         shuffle (bool): Whether to shuffle the samples.
 
     Yields:
-        Iterator[Iterable[Dict[str, bytes]]]: Sample dicts.
+        Iterator[Iterable[Dict[str, Any]]]: Sample dicts.
     """
     if shuffle:
         indices = np.random.permutation(len(dataset))
     else:
         indices = np.arange(len(dataset))
     for idx in indices:
-        _, img_id, (htot, wtot), bbox_sizes, bbox_labels = dataset[idx]
+        _, img_id, (htot, wtot), bbox_sizes, bbox_labels = dataset[int(idx)]
 
         img_id = dataset.img_keys[idx]
         img_data = dataset.images[img_id]

@@ -247,7 +247,7 @@ class Stream:
         if are_weights_relative:
             # Relative.
             if not choose_per_epoch:
-                choose_per_epoch = sum(samples_per_stream)
+                choose_per_epoch = int(samples_per_stream.sum())
             proportion_per_stream = np.array([stream.proportion for stream in streams], np.float64)
             proportion_per_stream /= proportion_per_stream.sum()
             choose_per_stream = (choose_per_epoch * proportion_per_stream).astype(np.int64)
@@ -282,7 +282,7 @@ class Stream:
                 choose_per_stream[stream_id] = choose
             repeat_per_stream = choose_per_stream / samples_per_stream
             proportion_per_stream = choose_per_stream / choose_per_stream.sum()
-            choose_per_epoch = sum(choose_per_stream)
+            choose_per_epoch = int(choose_per_stream.sum())
 
         # Now that we know the true props/reps/choices, inject those back into the streams.
         for stream, proportion, repeat, choose in zip(streams, proportion_per_stream,
