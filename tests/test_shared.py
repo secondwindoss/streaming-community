@@ -16,8 +16,8 @@ from streaming.base import StreamingDataset
 from streaming.base.constant import LOCALS
 from streaming.base.shared import SharedArray, get_shm_prefix
 from streaming.base.shared.memory import SharedMemory
-from streaming.base.shared.prefix import (_check_and_find, _get_path, _pack_locals,
-                                          _SharedMemoryNotReady, _unpack_locals)
+from streaming.base.shared.prefix import (_LOCALS_READY_ATTEMPTS, _check_and_find, _get_path,
+                                          _pack_locals, _SharedMemoryNotReady, _unpack_locals)
 from streaming.base.util import clean_stale_shared_memory
 from streaming.base.world import World
 from tests.common.utils import convert_to_mds
@@ -234,6 +234,30 @@ def test_get_shm_prefix_follower_retries_until_locals_readable(local_remote_dir:
     assert attempts['n'] >= 3
     assert _unpack_locals(bytes(follower_shm.buf)) == ([local], prefix_int)
     assert issubclass(_SharedMemoryNotReady, Exception)
+
+
+def test_get_shm_prefix_follower_permanent_local_mismatch(local_remote_dir: tuple[str, str]):
+    """A follower whose ``local`` differs from the leader's must fail once the re-reads run out."""
+    local, remote = local_remote_dir
+    clean_stale_shared_memory()
+
+    prefix_int = 0
+    name = _get_path(prefix_int, LOCALS)
+    packed = _pack_locals([remote], prefix_int)
+    leader_shm = SharedMemory(name, True, len(packed))
+    leader_shm.buf[:len(packed)] = packed
+
+    follower_world = MagicMock()
+    follower_world.is_local_leader = False
+
+    with patch('streaming.base.shared.prefix._check_and_find_retrying', return_value=prefix_int), \
+            patch('streaming.base.util.sleep') as mock_sleep, \
+            pytest.raises(RuntimeError, match='does not match') as exc_info:
+        get_shm_prefix([local], [None], follower_world)
+
+    assert local in str(exc_info.value)
+    assert remote in str(exc_info.value)
+    assert mock_sleep.call_count == _LOCALS_READY_ATTEMPTS - 1
 
 
 # Global counter to track attach attempts (per process)

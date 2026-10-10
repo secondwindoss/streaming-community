@@ -31,6 +31,13 @@ class _SharedMemoryNotReady(Exception):
     """
 
 
+# How many times a follower re-reads the leader's locals before treating a mismatch as real. The
+# leader writes them right after creating the block, so with the retry decorator's exponential
+# backoff from one tick these attempts span about a minute, after which a genuine ``local``
+# mismatch between ranks raises instead of backing off indefinitely.
+_LOCALS_READY_ATTEMPTS = 14
+
+
 def _each_prefix_int() -> Iterator[int]:
     """Get each possible prefix int to check in order.
 
@@ -245,13 +252,21 @@ def get_shm_prefix(streams_local: list[str],
     if not world.is_local_leader:
         name = _get_path(prefix_int, LOCALS)
 
-        @retry_decorator(exc_class=(FileNotFoundError, _SharedMemoryNotReady),
+        @retry_decorator(exc_class=FileNotFoundError,
                          num_attempts=100,
+                         initial_backoff=TICK,
+                         max_jitter=TICK)
+        def _attach_to_shm() -> SharedMemory:
+            """Attach to shared memory created by local leader."""
+            return SharedMemory(name, False)
+
+        @retry_decorator(exc_class=_SharedMemoryNotReady,
+                         num_attempts=_LOCALS_READY_ATTEMPTS,
                          initial_backoff=TICK,
                          max_jitter=TICK)
         def _attach_and_validate_locals() -> SharedMemory:
             """Attach to leader shm and wait until packed locals are consistent."""
-            follower_shm = SharedMemory(name, False)
+            follower_shm = _attach_to_shm()
             try:
                 their_locals, their_prefix_int = _unpack_locals(bytes(follower_shm.buf))
             except (ValueError, UnicodeDecodeError, IndexError, OverflowError) as err:
