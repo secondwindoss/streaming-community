@@ -39,6 +39,8 @@ classifiers = [
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
 ]
 
 install_requires = [
@@ -136,21 +138,15 @@ extra_deps['testing'] = [
 
 extra_deps['all'] = sorted({dep for deps in extra_deps.values() for dep in deps})
 
-package_name = os.environ.get('MOSAIC_PACKAGE_NAME', 'mosaicml-streaming')
-
-if package_name != 'mosaicml-streaming':
-    print(f'Building mosaicml-streaming as {package_name}')
-
 setup(
-    name=package_name,
+    name='streaming-community',
     version=streaming_version,
-    author='MosaicML',
-    author_email='team@mosaicml.com',
+    author='streaming-community contributors',
     description=
     'Streaming lets users create PyTorch compatible datasets that can be streamed from cloud-based object stores',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/mosaicml/streaming/',
+    url='https://github.com/secondwindoss/streaming-community',
     include_package_data=True,
     package_data={
         'streaming': ['py.typed'],
