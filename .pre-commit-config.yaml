@@ -79,12 +79,14 @@ repos:
     pass_filenames: false
     args: [--warnings]
     additional_dependencies: ["pyright@1.1.414"]
-- repo: https://github.com/myint/docformatter
-  rev: v1.5.0
-  hooks:
   - id: docformatter
+    name: docformatter
+    entry: docformatter
+    language: python
+    types: [python]
     args: [--in-place, --wrap-summaries=99, --wrap-descriptions=99]
     exclude: "(tests)"
+    additional_dependencies: [docformatter==1.5.0]
 - repo: https://github.com/adrienverge/yamllint.git
   rev: v1.28.0
   hooks:
