@@ -18,11 +18,11 @@ import inspect
 import os
 import shutil
 import sys
-import tempfile
 import types
 import warnings
 from typing import Any, List, Tuple, Type
 
+import pypandoc
 import sphinx.application
 import sphinx.ext.autodoc
 import sphinx.util.logging
@@ -31,30 +31,15 @@ import torch.nn
 from docutils import nodes
 from docutils.nodes import Element
 from git.repo.base import Repo
-from pypandoc.pandoc_download import download_pandoc
-from sphinx.ext.autodoc import ClassDocumenter, _
 from sphinx.writers.html5 import HTML5Translator
 
 import streaming
 
 if not shutil.which('pandoc'):
-    # Install pandoc if it is not installed.
-    # Pandoc is required by nbconvert but it is not included in the pypandoc pip package
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # if root on linux, use the "/bin" folder, since "~/bin" = "/root/bin" is not in the path by default
-        # similar on osx -- use /Applications instead of "~/Applications" = "/root/Applications"
-        target_folder = None
-        if os.getuid() == 0:
-            if sys.platform == 'linux':
-                target_folder = '/bin'
-            elif sys.platform == 'darwin':
-                target_folder = '/Applications/pandoc'
-            # Not handling windows
-
-        download_pandoc(version='2.18',
-                        download_folder=tmpdir,
-                        targetfolder=target_folder,
-                        delete_installer=True)
+    # nbsphinx converts notebook Markdown with pandoc. Fall back to the binary bundled with
+    # pypandoc-binary when none is on PATH, as on Read the Docs.
+    pandoc_dir = os.path.dirname(pypandoc.get_pandoc_path())
+    os.environ['PATH'] = pandoc_dir + os.pathsep + os.environ['PATH']
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -130,7 +115,10 @@ nbsphinx_prolog = f"""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
-source_suffix = ['.rst', '.md']
+source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
+
+# Give every Markdown heading a slug id so that `page.md#section` links resolve.
+myst_heading_anchors = 4
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -160,7 +148,6 @@ html_title = ' Streaming'
 
 # Customize CSS
 html_css_files = ['css/custom.css', 'https://cdn.jsdelivr.net/npm/@docsearch/css@3']
-html_js_files = ['js/posthog.js']
 
 # MosaicML Streaming logo
 # html_logo = 'https://storage.googleapis.com/docs.mosaicml.com/images/streaming-logo-light-mode.png'
@@ -266,16 +253,6 @@ with open(os.path.join(os.path.dirname(__file__), 'doctest_fixtures.py'), 'r') a
 
 with open(os.path.join(os.path.dirname(__file__), 'doctest_cleanup.py'), 'r') as f:
     doctest_global_cleanup = f.read()
-
-# ClassDocumenter.add_directive_header uses ClassDocumenter.add_line to
-#   write the class documentation.
-# We'll monkeypatch the add_line method and intercept lines that begin
-#   with "Bases:".
-# In order to minimize the risk of accidentally intercepting a wrong line,
-#   we'll apply this patch inside of the add_directive_header method.
-# From https://stackoverflow.com/questions/46279030/how-can-i-prevent-sphinx-from-listing-object-as-a-base-class
-add_line = ClassDocumenter.add_line
-line_to_delete = _('Bases: %s') % u':py:class:`object`'
 
 
 def _auto_rst_for_module(module: types.ModuleType, exclude_members: List[Any]) -> str:
@@ -431,30 +408,6 @@ def _generate_rst_files_for_modules() -> None:
 
         with open(saveas, 'w') as f:
             f.write(content)
-
-
-def _add_line_no_object_base(self, text, *args, **kwargs):
-    if text.strip() == line_to_delete:
-        return
-
-    add_line(self, text, *args, **kwargs)
-
-
-add_directive_header = ClassDocumenter.add_directive_header
-
-
-def _add_directive_header_no_object_base(self, *args, **kwargs):
-    """Hide that all classes inherit from the base class ``object``."""
-    self.add_line = _add_line_no_object_base.__get__(self)
-
-    result = add_directive_header(self, *args, **kwargs)
-
-    del self.add_line
-
-    return result
-
-
-ClassDocumenter.add_directive_header = _add_directive_header_no_object_base
 
 
 def _recursive_getattr(obj: Any, path: str):
