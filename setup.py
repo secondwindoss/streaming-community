@@ -48,7 +48,7 @@ install_requires = [
     'Brotli>=1.0.9',
     'google-cloud-storage>=2.9.0,<3.17.0',
     'matplotlib>=3.5.2,<4',
-    'numpy>=1.21.5,<2.5.0',
+    'numpy>=1.21.5,<3',
     'paramiko>=2.11.0,<6',
     'python-snappy>=0.6.1,<1',
     'torch>=1.10,<3',
@@ -129,7 +129,7 @@ extra_deps['alipan'] = [
 ]
 
 extra_deps['hf'] = [
-    'huggingface_hub>=0.23.4,<1.15',
+    'huggingface_hub>=0.23.4,<3',
 ]
 
 extra_deps['testing'] = [
