@@ -101,11 +101,11 @@ class World:
         worker = rank * workers_per_rank + worker_of_rank
         return cls(num_nodes, ranks_per_node, workers_per_rank, worker)
 
-    def copy(self) -> Self:
+    def copy(self) -> 'World':
         """Get a copy of this world state.
 
         Returns:
-            Self: A new copy with the same state.
+            World: A new copy with the same state.
         """
         return World(
             num_nodes=self.num_nodes,
@@ -114,7 +114,7 @@ class World:
             worker=self.worker,
         )
 
-    def replicate(self, replication: int) -> Self:
+    def replicate(self, replication: int) -> 'World':
         """Get a copy of this world state with the given replication factor.
 
         Args:
@@ -122,7 +122,7 @@ class World:
                 the same samples..
 
         Returns:
-            Self: A new sample replication version of this World state object.
+            World: A new sample replication version of this World state object.
         """
         if replication <= 0:
             raise ValueError(f'Replication factor must be positive.')
@@ -147,11 +147,11 @@ class World:
             worker=worker,
         )
 
-    def detect_workers(self) -> Self:
+    def detect_workers(self) -> 'World':
         """Get a copy of this world state with the worker information newly detected.
 
         Returns:
-            Self: A new workers-newly-detected version of this World state object.
+            World: A new workers-newly-detected version of this World state object.
         """
         worker_of_rank, workers_per_rank = self._get_worker_info()
         worker = self.rank * workers_per_rank + worker_of_rank

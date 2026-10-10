@@ -38,27 +38,7 @@ jobs:
         python -m pip install uv
         uv pip install --system --torch-backend cpu -e '.[dev]'
     - name: Run pre-commit
-      # Pyright runs in its own job below until its errors under numpy>=2.2 and torch 2.14 are fixed.
-      env:
-        SKIP: pyright
       run: pre-commit run --all-files --show-diff-on-failure
-
-  pyright:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true
-    steps:
-    - uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
-      with:
-        python-version: "3.10"
-    - name: Setup
-      run: |
-        set -ex
-        python -m pip install uv
-        uv pip install --system --torch-backend cpu -e '.[dev]'
-    - name: Run pyright
-      run: pre-commit run pyright --all-files
 
   install:
     runs-on: ubuntu-latest

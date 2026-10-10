@@ -7,7 +7,7 @@ import atexit
 from multiprocessing import resource_tracker  # pyright: ignore
 from multiprocessing.shared_memory import SharedMemory as BuiltinSharedMemory
 from time import sleep
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from streaming.base.constant import TICK
 
@@ -75,7 +75,7 @@ class SharedMemory:
         Returns:
             memoryview: Internal buffer.
         """
-        return self.shm.buf
+        return cast(memoryview, self.shm.buf)
 
     # Monkey-patched "multiprocessing.resource_tracker" to skip unwanted resource tracker warnings.
     # PR to remove resource tracker unlinking: https://github.com/python/cpython/pull/15989
@@ -91,7 +91,7 @@ class SharedMemory:
         """
         if rtype == 'shared_memory':
             return
-        return resource_tracker._resource_tracker.register(self, name, rtype)
+        return resource_tracker._resource_tracker.register(name, rtype)
 
     def fix_unregister(self, name: str, rtype: str) -> Any:
         """Skip un-registering resource tracking for shared memory.
@@ -105,7 +105,7 @@ class SharedMemory:
         """
         if rtype == 'shared_memory':
             return
-        return resource_tracker._resource_tracker.unregister(self, name, rtype)
+        return resource_tracker._resource_tracker.unregister(name, rtype)
 
     def cleanup(self):
         """Clean up SharedMemory resources."""

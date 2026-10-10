@@ -214,7 +214,7 @@ def _validate_sample(index: Union[int, slice, list[int], NDArray[np.int64]],
             validate_single_sample(sample_idx, output_sample[i], total_samples)
     else:  # NDArray
         for i, sample_idx in enumerate(index):
-            validate_single_sample(sample_idx, output_sample[i], total_samples)
+            validate_single_sample(int(sample_idx), output_sample[i], total_samples)
 
 
 @pytest.mark.parametrize(

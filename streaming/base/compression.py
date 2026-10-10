@@ -6,7 +6,7 @@
 import bz2
 import gzip
 from abc import ABC, abstractmethod
-from typing import Iterator, Optional
+from typing import Iterator, Optional, cast
 
 import brotli
 import snappy
@@ -136,7 +136,7 @@ class Snappy(Compression):
         return snappy.compress(data)
 
     def decompress(self, data: bytes) -> bytes:
-        return snappy.decompress(data)
+        return cast(bytes, snappy.decompress(data))
 
 
 class Zstandard(LevelledCompression):
