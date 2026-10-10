@@ -51,9 +51,9 @@ UPLOADERS = {
 def _provider_prefix(uri: str) -> str:
     """Return the cloud provider scheme for ``uri``, or ``''`` for local paths.
 
-    ``urllib.parse.urlparse`` treats Windows drive letters as URL schemes
-    (``D:/path`` → ``scheme='d'``). Those are local filesystem paths, not cloud
-    providers, so map single alphabetic schemes to the local uploader.
+    ``urllib.parse.urlparse`` treats Windows drive letters as URL schemes (``D:/path`` →
+    ``scheme='d'``). Those are local filesystem paths, not cloud providers, so map single
+    alphabetic schemes to the local uploader.
     """
     obj = urllib.parse.urlparse(uri)
     scheme = obj.scheme
