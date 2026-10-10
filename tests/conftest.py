@@ -1,7 +1,9 @@
 # Copyright 2022-2024 MosaicML Streaming authors
 # SPDX-License-Identifier: Apache-2.0
 
+import multiprocessing
 import os
+import sys
 from typing import Any
 from unittest.mock import patch
 
@@ -12,6 +14,14 @@ from moto import mock_aws
 from tests.common.utils import compressed_local_remote_dir  # pyright: ignore # noqa: F401
 from tests.common.utils import get_free_tcp_port  # pyright: ignore # noqa: F401
 from tests.common.utils import local_remote_dir  # pyright: ignore # noqa: F401
+
+# Python 3.14 starts processes with forkserver by default on Linux, so every DataLoader worker
+# re-imports torch and streaming at every epoch start, which made the 3.14 test job take twice as
+# long as 3.13. Linux users on earlier Pythons fork, so fork here too. Tests that pick a start
+# method themselves are unaffected, and the forkserver and spawn paths stay covered by the tests
+# that pickle the dataset and the barrier.
+if sys.platform == 'linux' and sys.version_info >= (3, 14):
+    multiprocessing.set_start_method('fork', force=True)
 
 MY_BUCKET = 'streaming-test-bucket'
 MY_PREFIX = 'train'
