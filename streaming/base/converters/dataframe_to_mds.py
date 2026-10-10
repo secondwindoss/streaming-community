@@ -108,6 +108,10 @@ def infer_dataframe_schema(dataframe: DataFrame,
         """
         if issubclass(type(spark_data_type), DecimalType):
             mds_type = SPARK_TO_MDS.get(DecimalType(), None)
+        elif isinstance(spark_data_type, ArrayType):
+            # Look up arrays by element type only, since ArrayType equality includes
+            # ``containsNull`` but the MDS encoding does not depend on it.
+            mds_type = SPARK_TO_MDS.get(ArrayType(spark_data_type.elementType), None)
         else:
             mds_type = SPARK_TO_MDS.get(spark_data_type, None)
 
@@ -281,7 +285,8 @@ def dataframe_to_mds(dataframe: DataFrame,
 
     out = mds_kwargs['out']
     keep_local = False if 'keep_local' not in mds_kwargs else mds_kwargs['keep_local']
-    cu = CloudUploader.get(out, keep_local=keep_local)
+    exist_ok = False if 'exist_ok' not in mds_kwargs else mds_kwargs['exist_ok']
+    cu = CloudUploader.get(out, keep_local=keep_local, exist_ok=exist_ok)
 
     # Fix output format as mds_path: Tuple(local, remote)
     if cu.remote is None:
