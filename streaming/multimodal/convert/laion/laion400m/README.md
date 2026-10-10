@@ -20,8 +20,8 @@ apt install bwm-ng htop iotop
 **2. Get the streaming code**
 <!--pytest.mark.skip-->
 ```
-git clone https://github.com/mosaicml/streaming/
-cd streaming/
+git clone https://github.com/secondwindoss/streaming-community.git
+cd streaming-community/
 ```
 
 **3. Download metadata from the-eye.eu (parquet format)**
