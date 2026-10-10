@@ -1,59 +1,62 @@
-<br />
-<p align="center">
-    <a href="https://github.com/mosaicml/streaming#gh-light-mode-only" class="only-light">
-      <img src="./docs/source/_static/images/streaming-logo-light-mode.png" width="50%"/>
-    </a>
-    <!--pypi website does not support dark mode and does not understand GitHub tag. Hence, it renders both the images.
-    The below tag is being used to remove the dark mode image on pypi website.-->
-    <!-- SETUPTOOLS_LONG_DESCRIPTION_HIDE_BEGIN -->
-    <a href="https://github.com/mosaicml/streaming#gh-dark-mode-only" class="only-dark">
-      <img src="./docs/source/_static/images/streaming-logo-dark-mode.png" width="50%"/>
-    </a>
-    <!-- SETUPTOOLS_LONG_DESCRIPTION_HIDE_END -->
-</p>
+<h1 align="center">streaming-community</h1>
 
 <h2><p align="center">Fast, accurate streaming of training data from cloud storage</p></h2>
 
 <h4><p align='center'>
-<a href="https://www.mosaicml.com">[Website]</a>
-- <a href="https://docs.mosaicml.com/projects/streaming/en/latest/getting_started/quick_start.html">[Quick Start]</a>
-- <a href="https://streaming.docs.mosaicml.com/">[Docs]
-- <a href="https://www.databricks.com/company/careers/open-positions?department=Mosaic%20AI&location=all">[We're Hiring!]</a>
+<a href="https://docs.mosaicml.com/projects/streaming/en/latest/getting_started/quick_start.html">[Quick Start]</a>
+- <a href="https://streaming.docs.mosaicml.com/">[Docs]</a>
 </p></h4>
 
 <p align="center">
-    <a href="https://pypi.org/project/mosaicml-streaming/">
-        <img alt="PyPi Version" src="https://img.shields.io/pypi/pyversions/mosaicml-streaming">
+    <a href="https://github.com/secondwindoss/streaming-community/actions/workflows/ci.yaml">
+        <img alt="CI" src="https://github.com/secondwindoss/streaming-community/actions/workflows/ci.yaml/badge.svg">
     </a>
-    <a href="https://pypi.org/project/mosaicml-streaming/">
-        <img alt="PyPi Package Version" src="https://img.shields.io/pypi/v/mosaicml-streaming">
+    <a href="https://pypi.org/project/streaming-community/">
+        <img alt="PyPI package version" src="https://img.shields.io/pypi/v/streaming-community">
     </a>
-    <a href="https://github.com/mosaicml/streaming/actions?query=workflow%3ATest">
-        <img alt="Unit test" src="https://github.com/mosaicml/streaming/actions/workflows/pytest.yaml/badge.svg">
-    </a>
-    <a href="https://pepy.tech/project/mosaicml-streaming/">
-        <img alt="PyPi Downloads" src="https://static.pepy.tech/personalized-badge/mosaicml-streaming?period=month&units=international_system&left_color=grey&right_color=blue&left_text=Downloads/month">
-    </a>
-    <a href="https://streaming.docs.mosaicml.com">
-        <img alt="Documentation" src="https://readthedocs.org/projects/streaming/badge/?version=stable">
-    </a>
-    <a href="https://dub.sh/mcomm">
-        <img alt="Chat @ Slack" src="https://img.shields.io/badge/slack-chat-2eb67d.svg?logo=slack">
-    </a>
-    <a href="https://github.com/mosaicml/streaming/blob/main/LICENSE">
-        <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-green.svg?logo=slack">
-    </a>
-    <a href="https://gurubase.io/g/streaming">
-        <img alt="License" src="https://img.shields.io/badge/Gurubase-Ask%20Streaming%20Guru-006BFF">
+    <a href="https://github.com/secondwindoss/streaming-community/blob/main/LICENSE">
+        <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-green.svg">
     </a>
 </p>
 <br />
 
+# About this fork
+
+streaming-community is a community fork of [MosaicML Streaming](https://github.com/mosaicml/streaming). The last upstream release, 0.13.0, was published on 2025-07-15 and no release has followed. That release pins `transformers<5`, so it cannot be installed together with transformers 5, and it pins `numpy<2.2`, so with `numpy>=2.2` pip and uv silently fall back to 0.10.0, the last release without the numpy pin. This fork publishes the same library as `streaming-community` with current dependency bounds.
+
+What stays the same:
+
+- the import name, `import streaming`
+- the MDS, JSON and XSV shard formats and `index.json` version 2
+- the `state_dict` keys used for mid-epoch resumption
+- the environment variable names
+
+Migrating from `mosaicml-streaming`:
+
+1. Uninstall the upstream package first. Both distributions install into the `streaming/` package directory, so they cannot be installed side by side.
+
+   <!--pytest.mark.skip-->
+   ```bash
+   pip uninstall mosaicml-streaming
+   pip install streaming-community
+   ```
+
+2. Projects that pin `mosaicml-streaming`, such as composer `<1.0` and llm-foundry `>=0.12.0,<0.13`, would pull the upstream package back in. With uv, drop their requirement with an override in `pyproject.toml`:
+
+   ```toml
+   [tool.uv]
+   override-dependencies = ["mosaicml-streaming ; sys_platform == 'never'"]
+   ```
+
+   pip has no dependency override. Install such a project with `pip install --no-deps` and add its other requirements yourself.
+
+Upstream remains at https://github.com/mosaicml/streaming; see [NOTICE](./NOTICE) for attribution.
+
 # 👋 Welcome
 
-We built StreamingDataset to make training on large datasets from cloud storage as fast, cheap, and scalable as possible.
+MosaicML built StreamingDataset to make training on large datasets from cloud storage as fast, cheap, and scalable as possible.
 
-It’s specially designed for multi-node, distributed training for large models—maximizing correctness guarantees, performance, and ease of use. Now, you can efficiently train anywhere, independent of your training data location. Just stream in the data you need, when you need it. To learn more about why we built StreamingDataset, read our [announcement blog](https://www.mosaicml.com/blog/mosaicml-streamingdataset).
+It’s specially designed for multi-node, distributed training for large models—maximizing correctness guarantees, performance, and ease of use. Now, you can efficiently train anywhere, independent of your training data location. Just stream in the data you need, when you need it. To learn more about why MosaicML built StreamingDataset, read the [announcement blog](https://www.mosaicml.com/blog/mosaicml-streamingdataset).
 
 StreamingDataset is compatible with any data type, including **images, text, video, and multimodal data**.
 
@@ -69,7 +72,7 @@ Streaming can be installed with `pip`:
 
 <!--pytest.mark.skip-->
 ```bash
-pip install mosaicml-streaming
+pip install streaming-community
 ```
 
 ## 🏁 Quick Start
@@ -151,22 +154,22 @@ Getting started guides, examples, API references, and other useful information c
 We have end-to-end tutorials for training a model on:
 
 - [CIFAR-10](https://docs.mosaicml.com/projects/streaming/en/stable/how_to_guides/cifar10.html)
-- [FaceSynthetics](https://github.com/mosaicml/streaming/blob/main/examples/facesynthetics.ipynb)
+- [FaceSynthetics](https://github.com/secondwindoss/streaming-community/blob/main/examples/facesynthetics.ipynb)
 - [SyntheticNLP](https://docs.mosaicml.com/projects/streaming/en/stable/how_to_guides/synthetic_nlp.html)
 
-We also have starter code for the following popular datasets, which can be found in the `streaming` [directory](https://github.com/mosaicml/streaming/tree/main/streaming):
+We also have starter code for the following popular datasets, which can be found in the `streaming` [directory](https://github.com/secondwindoss/streaming-community/tree/main/streaming):
 
 | Dataset | Task | Read | Write |
 | --- | --- | --- | --- |
-| LAION-400M | Text and image | [Read](https://github.com/mosaicml/diffusion-benchmark/blob/main/data.py) | [Write](https://github.com/mosaicml/streaming/tree/main/streaming/multimodal/convert/laion/laion400m) |
-| WebVid | Text and video | [Read](https://github.com/mosaicml/streaming/blob/main/streaming/multimodal/webvid.py) | [Write](https://github.com/mosaicml/streaming/blob/main/streaming/multimodal/convert/webvid.py) |
-| C4 | Text | [Read](https://github.com/mosaicml/streaming/blob/main/streaming/text/c4.py) | [Write](https://github.com/mosaicml/streaming/blob/main/streaming/text/convert/c4.py) |
-| EnWiki | Text | [Read](https://github.com/mosaicml/streaming/blob/main/streaming/text/enwiki.py) | [Write](https://github.com/mosaicml/streaming/tree/main/streaming/text/convert/enwiki) |
-| Pile | Text | [Read](https://github.com/mosaicml/streaming/blob/main/streaming/text/pile.py) | [Write](https://github.com/mosaicml/streaming/blob/main/streaming/text/convert/pile.py)
-| ADE20K | Image segmentation | [Read](https://github.com/mosaicml/streaming/blob/main/streaming/vision/ade20k.py) | [Write](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/ade20k.py)
-| CIFAR10 | Image classification | [Read](https://github.com/mosaicml/streaming/blob/main/streaming/vision/cifar10.py) | [Write](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/cifar10.py) |
-| COCO | Image classification | [Read](https://github.com/mosaicml/streaming/blob/main/streaming/vision/coco.py) | [Write](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/coco.py) |
-| ImageNet | Image classification | [Read](https://github.com/mosaicml/streaming/blob/main/streaming/vision/imagenet.py) | [Write](https://github.com/mosaicml/streaming/blob/main/streaming/vision/convert/imagenet.py) |
+| LAION-400M | Text and image | [Read](https://github.com/mosaicml/diffusion-benchmark/blob/main/data.py) | [Write](https://github.com/secondwindoss/streaming-community/tree/main/streaming/multimodal/convert/laion/laion400m) |
+| WebVid | Text and video | [Read](https://github.com/secondwindoss/streaming-community/blob/main/streaming/multimodal/webvid.py) | [Write](https://github.com/secondwindoss/streaming-community/blob/main/streaming/multimodal/convert/webvid.py) |
+| C4 | Text | [Read](https://github.com/secondwindoss/streaming-community/blob/main/streaming/text/c4.py) | [Write](https://github.com/secondwindoss/streaming-community/blob/main/streaming/text/convert/c4.py) |
+| EnWiki | Text | [Read](https://github.com/secondwindoss/streaming-community/blob/main/streaming/text/enwiki.py) | [Write](https://github.com/secondwindoss/streaming-community/tree/main/streaming/text/convert/enwiki) |
+| Pile | Text | [Read](https://github.com/secondwindoss/streaming-community/blob/main/streaming/text/pile.py) | [Write](https://github.com/secondwindoss/streaming-community/blob/main/streaming/text/convert/pile.py)
+| ADE20K | Image segmentation | [Read](https://github.com/secondwindoss/streaming-community/blob/main/streaming/vision/ade20k.py) | [Write](https://github.com/secondwindoss/streaming-community/blob/main/streaming/vision/convert/ade20k.py)
+| CIFAR10 | Image classification | [Read](https://github.com/secondwindoss/streaming-community/blob/main/streaming/vision/cifar10.py) | [Write](https://github.com/secondwindoss/streaming-community/blob/main/streaming/vision/convert/cifar10.py) |
+| COCO | Image classification | [Read](https://github.com/secondwindoss/streaming-community/blob/main/streaming/vision/coco.py) | [Write](https://github.com/secondwindoss/streaming-community/blob/main/streaming/vision/convert/coco.py) |
+| ImageNet | Image classification | [Read](https://github.com/secondwindoss/streaming-community/blob/main/streaming/vision/imagenet.py) | [Write](https://github.com/secondwindoss/streaming-community/blob/main/streaming/vision/convert/imagenet.py) |
 
 **To start training on these datasets:**
 
@@ -290,7 +293,7 @@ dataset = StreamingDataset(
 
 # 🏆 Project Showcase
 
-Here are some projects and experiments that used StreamingDataset. Got something to add?  Email [mcomm@databricks.com](mailto:mcomm@databricks.com) or join our [Community Slack](https://dub.sh/mcomm).
+Here are some projects and experiments that used StreamingDataset. Got something to add? Open a pull request.
 
 - [BioMedLM](https://www.mosaicml.com/blog/introducing-pubmed-gpt): a Domain Specific Large Language Model for BioMedicine by MosaicML and Stanford CRFM
 - [Mosaic Diffusion Models](https://www.mosaicml.com/blog/training-stable-diffusion-from-scratch-costs-160k): Training Stable Diffusion from Scratch Costs <$160k
@@ -303,15 +306,7 @@ Here are some projects and experiments that used StreamingDataset. Got something
 
 We welcome any contributions, pull requests, or issues.
 
-To start contributing, see our [Contributing](https://github.com/mosaicml/streaming/blob/main/CONTRIBUTING.md) page.
-
-P.S.: [We're hiring](https://mosaicml.com/jobs)!
-
-If you like this project, give us a star **⭐** and check out our other projects:
-
-- **[Composer](https://github.com/mosaicml/composer) -** a modern PyTorch library that makes scalable, efficient neural network training easy
-- **[MosaicML Examples](https://github.com/mosaicml/examples)** - reference examples for training ML models quickly and to high accuracy - featuring starter code for GPT / Large Language Models, Stable Diffusion, BERT, ResNet-50, and DeepLabV3
-- **[MosaicML Cloud](https://www.mosaicml.com/cloud)** - our training platform built to minimize training costs for LLMs, Diffusion Models, and other large models - featuring multi-cloud orchestration, effortless multi-node scaling, and under-the-hood optimizations for speeding up training time
+To start contributing, see our [Contributing](https://github.com/secondwindoss/streaming-community/blob/main/CONTRIBUTING.md) page.
 
 # ✍️ Citation
 
