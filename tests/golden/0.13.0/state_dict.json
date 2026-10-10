@@ -1,0 +1,42 @@
+{
+    "dataset": "mds-none",
+    "args": {
+        "shuffle": true,
+        "shuffle_algo": "py1e",
+        "shuffle_seed": 9176,
+        "num_canonical_nodes": 2,
+        "batch_size": 4
+    },
+    "num_consumed": 12,
+    "consumed_ids": [31, 17, 51, 13, 58, 11, 26, 10, 38, 0, 57, 46],
+    "remaining_ids": [39, 42, 50, 47, 49, 12, 30, 21, 48, 7, 28, 4, 29, 2, 52, 23, 63, 40, 60, 41, 24, 14, 34, 9, 61, 44, 33, 6, 56, 15, 27, 16, 32, 1, 25, 19, 37, 8, 35, 22, 53, 5, 36, 43, 62, 3, 59, 20, 54, 45, 55, 18],
+    "state_dict_from_beginning": {
+        "epoch": 0,
+        "sample_in_epoch": 12,
+        "num_canonical_nodes": 2,
+        "shuffle_seed": 9176,
+        "initial_physical_nodes": 1
+    },
+    "state_dict_not_from_beginning": {
+        "epoch": 0,
+        "sample_in_epoch": 12,
+        "num_canonical_nodes": 2,
+        "shuffle_seed": 9176,
+        "initial_physical_nodes": 1
+    },
+    "state_dict_after_load": {
+        "epoch": 0,
+        "sample_in_epoch": 12,
+        "num_canonical_nodes": 2,
+        "shuffle_seed": 9176,
+        "initial_physical_nodes": 1
+    },
+    "resumed_ids": [39, 42, 50, 47, 49, 12, 30, 21, 48, 7, 28, 4, 29, 2, 52, 23, 63, 40, 60, 41, 24, 14, 34, 9, 61, 44, 33, 6, 56, 15, 27, 16, 32, 1, 25, 19, 37, 8, 35, 22, 53, 5, 36, 43, 62, 3, 59, 20, 54, 45, 55, 18],
+    "state_dict_after_resume": {
+        "epoch": 0,
+        "sample_in_epoch": 64,
+        "num_canonical_nodes": 2,
+        "shuffle_seed": 9176,
+        "initial_physical_nodes": 1
+    }
+}

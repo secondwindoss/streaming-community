@@ -1,8 +1,9 @@
 default_language_version:
   python: python3
 # Skip the pre-commit check for below directories to have
-# a consistency with the official tfrecord preprocessing scripts
-exclude: "^(streaming/text/convert/enwiki/)"
+# a consistency with the official tfrecord preprocessing scripts, and for the
+# golden fixtures under tests/golden/<version>/, which are compared byte for byte
+exclude: "^(streaming/text/convert/enwiki/|tests/golden/[0-9]+\\.[0-9]+\\.[0-9]+/)"
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
