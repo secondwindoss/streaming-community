@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -85,11 +85,36 @@ jobs:
     - name: Import
       run: python -c "import streaming; print(streaming.__version__)"
 
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+    - name: Setup
+      run: python -m pip install uv
+    - name: Resolve .[all] with numpy 2.5 and transformers 5 on Python 3.12
+      # Fails if the bounds in setup.py cannot be satisfied together with current numpy and transformers.
+      run: |
+        set -ex
+        uv pip compile --python-version 3.12 --extra all \
+          --constraint <(printf 'numpy>=2.5\ntransformers>=5\n') \
+          --no-annotate --no-header setup.py -o "$RUNNER_TEMP/resolved-3.12.txt"
+        grep -E '^(numpy|transformers|huggingface-hub|pyspark)==' "$RUNNER_TEMP/resolved-3.12.txt"
+    - name: Resolve .[all] with transformers 5 on Python 3.10
+      # numpy 2.5 needs Python 3.11, so only transformers is constrained here.
+      run: |
+        set -ex
+        uv pip compile --python-version 3.10 --extra all \
+          --constraint <(printf 'transformers>=5\n') \
+          --no-annotate --no-header setup.py -o "$RUNNER_TEMP/resolved-3.10.txt"
+        grep -E '^(numpy|transformers|huggingface-hub|pyspark)==' "$RUNNER_TEMP/resolved-3.10.txt"
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    # Python 3.14 is not blocking until the spark extra allows pyspark 4 (pyspark 3.5 fails on 3.14).
-    continue-on-error: ${{ matrix.python_version == '3.14' }}
     strategy:
       fail-fast: false
       matrix:
@@ -99,13 +124,6 @@ jobs:
         - "3.12"
         - "3.13"
         - "3.14"
-        include:
-        # pyspark 3.5 hangs on Python 3.14, so skip the spark tests there.
-        - python_version: "3.14"
-          pytest_args: >-
-            --ignore=tests/base/converters/test_dataframe_to_mds.py
-            --deselect=tests/test_util.py::test_merge_index_from_list_local
-            --deselect=tests/test_util.py::test_merge_index_from_root_local
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-python@v7
@@ -122,7 +140,7 @@ jobs:
         status=0
         for group in $(seq 1 11); do
           echo "::group::pytest group $group of 11"
-          pytest --splits 11 --group "$group" --cov-fail-under=10 --timeout=600 ${{ matrix.pytest_args }} || status=1
+          pytest --splits 11 --group "$group" --cov-fail-under=10 --timeout=600 || status=1
           echo "::endgroup::"
         done
         exit $status
@@ -132,6 +150,7 @@ jobs:
     needs:
     - lint
     - install
+    - resolve
     - test
     runs-on: ubuntu-latest
     steps:
