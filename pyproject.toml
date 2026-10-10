@@ -1,6 +1,6 @@
 # build requirements
 [build-system]
-requires = ["setuptools < 81.0.0"]
+requires = ["setuptools < 85.0.0"]
 build-backend = "setuptools.build_meta"
 
 # iSort
