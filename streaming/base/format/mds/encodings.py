@@ -489,10 +489,19 @@ class JPEG(Encoding):
 
 
 class PNG(Encoding):
-    """Store PIL image as PNG."""
+    """Store PIL image as PNG.
+
+    Mode ``I`` (32-bit integer) images are saved as 16-bit grayscale PNG, so pixel values are
+    clipped to ``0..65535`` and decode as mode ``I;16``, as they always have.
+    """
 
     def encode(self, obj: Image.Image) -> bytes:
         self._validate(obj, Image.Image)
+        if obj.mode == 'I':
+            # PNG has no 32-bit integer mode. Pillow < 13 silently wrote mode I as 16-bit
+            # grayscale (clipping to 0..65535); Pillow 13 removes that path, so convert
+            # explicitly. ``convert('I;16')`` clips the same way, so the bytes are unchanged.
+            obj = obj.convert('I;16')
         out = BytesIO()
         obj.save(out, format='PNG')
         return out.getvalue()

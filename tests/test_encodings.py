@@ -4,6 +4,7 @@
 import json
 import os
 import tempfile
+import warnings
 from decimal import Decimal
 from typing import Any, Union
 
@@ -342,6 +343,35 @@ class TestMDSEncodings:
 
         # Validate data content
         assert np.array_equal(np_data, np_dec_data)
+
+    def test_png_mode_i_encode_decode(self):
+        """Mode ``I`` is written as 16-bit grayscale PNG, clipped to 0..65535, and reads back as
+        ``I;16``, without hitting the Pillow 13 removal of saving mode ``I`` as PNG."""
+        png_enc = mdsEnc.PNG()
+
+        # Non-square int32 data with values below 0, inside 0..65535 and above 65535
+        np_data = np.array(
+            [[-5, -1, 0, 1], [65534, 65535, 65536, 70000], [100000, -100000, 2**31 - 1, -(2**31)]],
+            dtype=np.int32)
+        img = Image.fromarray(np_data)
+        assert img.mode == 'I'
+
+        # Test encode without a DeprecationWarning
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            enc_data = png_enc.encode(img)
+        assert not [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        assert isinstance(enc_data, bytes)
+
+        # Test decode: PNG has no 32-bit integer mode, so Pillow opens the data as ``I;16``
+        dec_data = png_enc.decode(enc_data)
+        assert isinstance(dec_data, Image.Image)
+        assert dec_data.mode == 'I;16'
+        assert dec_data.size == img.size
+
+        # Validate data content: values survive clipped to 16 bits, as Pillow < 13 wrote them
+        np_dec_data = np.asarray(dec_data, dtype=np.int64)
+        assert np.array_equal(np_dec_data, np.clip(np_data, 0, 65535))
 
     @pytest.mark.parametrize('data', [b'123', 77.7])
     def test_png_encode_invalid_data(self, data: Any):
