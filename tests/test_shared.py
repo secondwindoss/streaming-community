@@ -338,9 +338,6 @@ def worker_process(rank: int, world_size: int, dataset_path: str):
         return False
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason='Flaky: fails about 2 of 3 runs, to be fixed with the shm prefix race work.')
 def test_forced_race():
     """Test with forced race condition."""
 
