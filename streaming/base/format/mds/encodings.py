@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 from io import BytesIO
 from itertools import chain
-from typing import Any, Iterator, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 import numpy as np
 from numpy import typing as npt
@@ -113,7 +113,7 @@ class NDArray(Encoding):
 
     Args:
         dtype (str, optional): The dtype, if fixed. Defaults to ``None``.
-        shape (Tuple[int], optional): The shape, if fixed. Defaults to ``None``.
+        shape (Tuple[int, ...], optional): The shape, if fixed. Defaults to ``None``.
     """
 
     # Integer <4 -> shape dtype.
@@ -146,12 +146,16 @@ class NDArray(Encoding):
     _value_dtype2int = {v: k for k, v in _int2value_dtype.items()}
 
     @classmethod
-    def _get_static_size(cls, dtype: Optional[str], shape: Optional[tuple[int]]) -> Optional[int]:
+    def _get_static_size(
+        cls,
+        dtype: Optional[str],
+        shape: Optional[tuple[int, ...]],
+    ) -> Optional[int]:
         """Get the fixed size of the column in bytes, if applicable.
 
         Args:
             dtype (str, optional): The dtype, if fixed.
-            shape (Tuple[int], optional): The shape, if fixed.
+            shape (Tuple[int, ...], optional): The shape, if fixed.
 
         Returns:
             int: The fixed size in bytes, if there is one.
@@ -160,7 +164,7 @@ class NDArray(Encoding):
             return None
         return int(np.prod(shape)) * getattr(np, dtype)().nbytes
 
-    def __init__(self, dtype: Optional[str] = None, shape: Optional[tuple[int]] = None):
+    def __init__(self, dtype: Optional[str] = None, shape: Optional[tuple[int, ...]] = None):
         if dtype is not None:
             assert dtype in self._value_dtype2int
         if shape is not None:
@@ -626,8 +630,7 @@ class JPEGArray(Encoding):
         n_images_as_bytes: bytes = np.uint32(len(obj)).tobytes()
         image_byte_sizes_array: npt.NDArray = np.uint32(image_byte_sizes)  # pyright: ignore
         image_byte_sizes_as_bytes: bytes = image_byte_sizes_array.tobytes()
-        bytes_iterables: Iterator[bytes] = chain([n_images_as_bytes], [image_byte_sizes_as_bytes],
-                                                 obj)
+        bytes_iterables = chain([n_images_as_bytes], [image_byte_sizes_as_bytes], obj)
         return b''.join(bytes_iterables)
 
     def decode(self, data: bytes) -> list[Image.Image]:

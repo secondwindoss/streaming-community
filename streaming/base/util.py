@@ -573,11 +573,14 @@ def retry(  # type: ignore
 
         @functools.wraps(func)
         def new_func(*args: Any, **kwargs: Any):
+            # ``exc_class`` is an exception class or a tuple of them by now: the bare ``@retry``
+            # form below swaps the decorated function out for ``Exception`` before any call.
+            exc_classes = cast(Union[type[Exception], tuple[type[Exception], ...]], exc_class)
             i = 0
             while True:
                 try:
                     return func(*args, **kwargs)
-                except exc_class as e:
+                except exc_classes as e:
                     if clean_up_fn is not None:
                         clean_up_fn()
 

@@ -267,7 +267,7 @@ class S3Downloader(CloudDownloader):
         return state
 
     def __setstate__(self, state: dict):
-        self.__dict__.update(state)
+        vars(self).update(state)
         self._s3_client = None  # Ensure _s3_client is reset after unpickling
 
 
@@ -438,8 +438,8 @@ class OCIDownloader(CloudDownloader):
         """Initialize the OCI downloader."""
         super().__init__()
 
-        import oci
-        self._oci_client: Optional[oci.object_storage.ObjectStorageClient] = None
+        # The oci SDK is untyped and pyright infers its calls as Optional, so the client is Any.
+        self._oci_client: Optional[Any] = None
 
     @staticmethod
     def _client_identifier() -> str:

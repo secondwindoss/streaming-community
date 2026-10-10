@@ -5,6 +5,7 @@
 
 import os
 from argparse import ArgumentParser, Namespace
+from typing import Iterable
 
 from tqdm import tqdm
 
@@ -89,9 +90,10 @@ def process_split(in_root: str, out_root: str, compression: str, hashes: list[st
                    hashes=hashes,
                    size_limit=size_limit,
                    progress_bar=progress_bar) as out:
+        each_basename: Iterable[str] = basenames
         if progress_bar:
-            basenames = tqdm(basenames, leave=leave)
-        for basename in basenames:
+            each_basename = tqdm(basenames, leave=bool(leave))
+        for basename in each_basename:
             filename = os.path.join(in_root, basename)
             for line in open(filename):
                 line = line.strip()
