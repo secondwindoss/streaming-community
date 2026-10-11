@@ -40,7 +40,7 @@ A simulator for throughput, network use, and shuffle quality with MosaicML Strea
 ### Getting Started
 Run the following to install simulator-specific dependencies, if they don't already exist:
 ```
-pip install --upgrade "mosaicml-streaming[simulator]"
+pip install --upgrade "streaming-community[simulator]"
 ```
 Then, simply run `simulator` in your command line to open the Web UI and get simulating!
 ### Key Features

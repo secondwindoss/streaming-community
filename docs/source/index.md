@@ -18,7 +18,7 @@ dataloader = DataLoader(dataset=StreamingDataset(remote='s3://...', batch_size=1
 1. Set up your Python development environment.
 2. Install Streaming with `pip`:
 ```
-pip install mosaicml-streaming
+pip install streaming-community
 ```
 3. Verify the installation with:
 ```
