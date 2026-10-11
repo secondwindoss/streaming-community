@@ -83,7 +83,7 @@ StreamingDataset is compatible with any data type, including **images, text, vid
 
 With support for major cloud storage providers ([AWS](https://aws.amazon.com/s3/), [OCI](https://www.oracle.com/cloud/storage/object-storage/), [GCS](https://cloud.google.com/storage), [Azure](https://azure.microsoft.com/en-us/products/storage/blobs), [Databricks](https://docs.databricks.com/en/storage/index.html), and any S3 compatible object store such as [Cloudflare R2](https://www.cloudflare.com/products/r2/), [Coreweave](https://docs.coreweave.com/storage/object-storage), [Backblaze b2](https://www.backblaze.com/b2/cloud-storage.html), etc. ) and designed as a drop-in replacement for your PyTorch [IterableDataset](https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset) class, StreamingDataset seamlessly integrates into your existing training workflows.
 
-![The flow of samples from shards in the cloud to devices in your cluster](docs/source/_static/images/flow.gif)
+![The flow of samples from shards in the cloud to devices in your cluster](https://raw.githubusercontent.com/secondwindoss/streaming-community/025e936c4f7d887fd72e93360ca88f815a365564/docs/source/_static/images/flow.gif)
 
 # 🚀 Getting Started
 
@@ -243,7 +243,7 @@ A unique feature of our solution: samples are in the same order regardless of th
 
 See the figure below — training a model on 1, 8, 16, 32, or 64 GPUs yields the **exact same loss curve** (up to the limitations of floating point math!)
 
-![Plot of elastic determinism](docs/source/_static/images/determinism.png)
+![Plot of elastic determinism](https://raw.githubusercontent.com/secondwindoss/streaming-community/025e936c4f7d887fd72e93360ca88f815a365564/docs/source/_static/images/determinism.png)
 
 ## Instant mid-epoch resumption
 
@@ -267,7 +267,7 @@ Our MDS format cuts extraneous work to the bone, resulting in ultra-low sample l
 
 Model convergence from using StreamingDataset is just as good as using local disk, thanks to our shuffling algorithm.
 
-![Plot of equal convergence](docs/source/_static/images/convergence.png)
+![Plot of equal convergence](https://raw.githubusercontent.com/secondwindoss/streaming-community/025e936c4f7d887fd72e93360ca88f815a365564/docs/source/_static/images/convergence.png)
 
 Below are results from ImageNet + ResNet-50 training, collected over 5 repetitions.
 
