@@ -99,7 +99,7 @@ _COMMIT_SHA = _get_commit_sha()
 # Don't show notebook output in the docs
 nbsphinx_execute = 'never'
 
-notebook_path = 'mosaicml/streaming/blob/' + _COMMIT_SHA + '/{{ env.doc2path(env.docname, base=None) }}'
+notebook_path = 'secondwindoss/streaming-community/blob/' + _COMMIT_SHA + '/docs/source/{{ env.doc2path(env.docname, base=None) }}'
 
 # Include an "Open in Colab" link at the beginning of all notebooks
 nbsphinx_prolog = f"""
