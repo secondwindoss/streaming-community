@@ -47,7 +47,3 @@ This fork publishes the same library under a new distribution name. The followin
 ## Reporting security issues
 
 Do not open a public issue for a vulnerability. See [SECURITY.md](SECURITY.md) for how to report one privately.
-
-## Conduct
-
-Contributors are expected to follow the [code of conduct](CODE_OF_CONDUCT.md).

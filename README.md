@@ -18,8 +18,8 @@
 
 <h4><p align='center'>
 <a href="https://www.mosaicml.com">[Website]</a>
-- <a href="https://docs.mosaicml.com/projects/streaming/en/latest/getting_started/quick_start.html">[Quick Start]</a>
-- <a href="https://streaming.docs.mosaicml.com/">[Docs]</a>
+- <a href="https://streaming-community.readthedocs.io/en/stable/getting_started/quick_start.html">[Quick Start]</a>
+- <a href="https://streaming-community.readthedocs.io/en/stable/">[Docs]</a>
 </p></h4>
 
 <p align="center">
@@ -32,8 +32,8 @@
     <a href="https://github.com/secondwindoss/streaming-community/actions/workflows/ci.yaml">
         <img alt="CI" src="https://github.com/secondwindoss/streaming-community/actions/workflows/ci.yaml/badge.svg">
     </a>
-    <a href="https://streaming.docs.mosaicml.com">
-        <img alt="Documentation" src="https://readthedocs.org/projects/streaming/badge/?version=stable">
+    <a href="https://streaming-community.readthedocs.io/en/stable/">
+        <img alt="Documentation" src="https://readthedocs.org/projects/streaming-community/badge/?version=stable">
     </a>
     <a href="https://github.com/secondwindoss/streaming-community/blob/main/LICENSE">
         <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-green.svg">
@@ -170,13 +170,13 @@ dataloader = DataLoader(dataset)
 
 ### 📚 What next?
 
-Getting started guides, examples, API references, and other useful information can be found in our [docs](https://streaming.docs.mosaicml.com/).
+Getting started guides, examples, API references, and other useful information can be found in our [docs](https://streaming-community.readthedocs.io/en/stable/).
 
 We have end-to-end tutorials for training a model on:
 
-- [CIFAR-10](https://docs.mosaicml.com/projects/streaming/en/stable/how_to_guides/cifar10.html)
+- [CIFAR-10](https://streaming-community.readthedocs.io/en/stable/how_to_guides/cifar10.html)
 - [FaceSynthetics](https://github.com/secondwindoss/streaming-community/blob/main/examples/facesynthetics.ipynb)
-- [SyntheticNLP](https://docs.mosaicml.com/projects/streaming/en/stable/how_to_guides/synthetic_nlp.html)
+- [SyntheticNLP](https://streaming-community.readthedocs.io/en/stable/how_to_guides/synthetic_nlp.html)
 
 We also have starter code for the following popular datasets, which can be found in the `streaming` [directory](https://github.com/secondwindoss/streaming-community/tree/main/streaming):
 
@@ -217,7 +217,7 @@ dataset = StreamingInsideWebVid(local=local, remote=remote, shuffle=True)
 
 ## Seamless data mixing
 
-Easily experiment with dataset mixtures with [`Stream`](https://docs.mosaicml.com/projects/streaming/en/latest/api_reference/generated/streaming.Stream.html#stream). Dataset sampling can be controlled in relative (proportion) or absolute (repeat or samples terms). During streaming, the different datasets are streamed, shuffled, and mixed seamlessly just-in-time.
+Easily experiment with dataset mixtures with [`Stream`](https://streaming-community.readthedocs.io/en/stable/api_reference/generated/streaming.Stream.html#stream). Dataset sampling can be controlled in relative (proportion) or absolute (repeat or samples terms). During streaming, the different datasets are streamed, shuffled, and mixed seamlessly just-in-time.
 
 <!--pytest.mark.skip-->
 ```python
