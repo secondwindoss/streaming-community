@@ -92,6 +92,24 @@ jobs:
           --no-annotate --no-header setup.py -o "$RUNNER_TEMP/resolved-3.10.txt"
         grep -E '^(numpy|transformers|huggingface-hub|pyspark)==' "$RUNNER_TEMP/resolved-3.10.txt"
 
+  docs:
+    # Not required by ci-ok yet: the build fetches intersphinx inventories from other sites, so
+    # watch it for a while before it can block merges.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+    - name: Setup
+      run: |
+        set -ex
+        python -m pip install uv
+        uv pip install --system --torch-backend cpu -e '.[docs]'
+    - name: Build the docs with warnings as errors
+      run: make -C docs html
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 60
