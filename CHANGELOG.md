@@ -18,6 +18,7 @@ First release under the `streaming-community` name. The import name stays `strea
 - Allow numpy 2.5 (`numpy<3`) and huggingface_hub 2 (`huggingface_hub<3` in the `hf` extra) (#29). Upstream `main` already allowed transformers 5 (`transformers<6`).
 - Allow pyspark 4 in the `spark` extra (`pyspark<5`), and check in CI that `[all]` resolves with numpy 2.5 and transformers 5 (#31).
 - Dependency bumps by Dependabot: setuptools `<85`, xxhash `<5`, google-cloud-storage `<3.17`, the grouped minor and patch updates (among them databricks-sdk 0.147.0) and the GitHub Actions (#1, #3, #15, #14, #13).
+- Dependabot updates before the release: databricks-sdk 0.148.0 in the `databricks` extra, docutils `<0.24` in the `docs` extra, and for development pytest 9.1.1 (fixes the `/tmp/pytest-of-{user}` handling in CVE-2025-71176), pytest-cov `<8`, pre-commit `<5` and fastapi 0.142.4, with `tests/test_mixing.py` adjusted for pytest 9 (#16, #37, #38, #39, #40, #43).
 
 ### Fixes
 
