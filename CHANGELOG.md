@@ -2,6 +2,12 @@
 
 streaming-community is a fork of MosaicML Streaming 0.13.0. Each entry names the pull request in this repository.
 
+## 0.14.1 (2026-10-11)
+
+### Docs
+
+- Install `streaming-community` instead of `mosaicml-streaming` in the docs and the tutorial notebooks (#45).
+
 ## 0.14.0 (2026-10-11)
 
 First release under the `streaming-community` name. The import name stays `streaming`, and the shard formats, `index.json`, `state_dict` keys and environment variables are unchanged from 0.13.0.
