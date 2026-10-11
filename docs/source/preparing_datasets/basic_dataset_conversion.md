@@ -1,6 +1,6 @@
 # Basic Dataset Conversion
 
-This guide covers how to convert your raw data to MDS format using {class}`streaming.MDSWriter`. Writing to other supported shard formats is very similar. Read more about dataset shard formats in the [Dataset Format](dataset_format.md) guide. For a high-level explanation of how dataset writing works, check out the [main concepts](../getting_started/main_concepts.md#Dataset-conversion) page.
+This guide covers how to convert your raw data to MDS format using {class}`streaming.MDSWriter`. Writing to other supported shard formats is very similar. Read more about dataset shard formats in the [Dataset Format](dataset_format.md) guide. For a high-level explanation of how dataset writing works, check out the [main concepts](../getting_started/main_concepts.md#dataset-conversion) page.
 
 ## Configuring dataset writing
 
@@ -42,7 +42,7 @@ out = ('/local/data', 'oci://bucket/data')
 | Numerical String   | 'str_int'     | `StrInt`     | stores in UTF-8          |
 | Numerical String   | 'str_float'   | `StrFloat`   | stores in UTF-8          |
 | Numerical String   | 'str_decimal' | `StrDecimal` | stores in UTF-8          |
-| Image              | 'pil'         | `PIL`        | raw PIL image class ([link]((https://pillow.readthedocs.io/en/stable/reference/Image.html)))            |
+| Image              | 'pil'         | `PIL`        | raw PIL image class ([link](https://pillow.readthedocs.io/en/stable/reference/Image.html))            |
 | Image              | 'jpeg'        | `JPEG`       | PIL image as JPEG        |
 | Image              | 'png'         | `PNG`        | PIL image as PNG         |
 | Pickle             | 'pkl'         | `Pickle`     | arbitrary Python objects |
@@ -86,7 +86,7 @@ size_limit = '1kb' # 1kB limit, as a human-readable string
 ```
 Shard file size depends on the dataset size, but generally, too small of a shard size creates a ton of shard files and heavy network overheads, and too large of a shard size creates fewer shard files, but downloads are less balanced. A shard size of between 50-100MB works well in practice.
 
-5. An optional `compression` algorithm name (and level) if you would like to compress the shard files. This can reduce egress costs during training. StreamingDataset will uncompress shard files upon download during training. You can control whether to keep compressed shard files locally during training with the `keep_zip` flag -- more information [here](../dataset_configuration/shard_retrieval.md#Keeping-compressed-shards).
+5. An optional `compression` algorithm name (and level) if you would like to compress the shard files. This can reduce egress costs during training. StreamingDataset will uncompress shard files upon download during training. You can control whether to keep compressed shard files locally during training with the `keep_zip` flag -- more information [here](../dataset_configuration/shard_retrieval.md#keeping-compressed-shards).
 
 Supported compression algorithms:
 
@@ -107,7 +107,7 @@ compression = 'zstd:9' # zstd, specifying level 9.
 ```
 The higher the level, the higher the compression ratio. However, using higher compression levels will impact the compression speed. In our experience, `zstd` is optimal over the time-size Pareto frontier. Compression is most beneficial for text, whereas it is less helpful for other modalities like images.
 
-6. An optional `hashes` list of algorithm names, used to verify data integrity. Hashes are saved in the `index.json` file. Hash verification during training is controlled with the `validate_hash` argument more information [here](../dataset_configuration/shard_retrieval.md#Hash-validation).
+6. An optional `hashes` list of algorithm names, used to verify data integrity. Hashes are saved in the `index.json` file. Hash verification during training is controlled with the `validate_hash` argument more information [here](../dataset_configuration/shard_retrieval.md#hash-validation).
 
 Available cryptographic hash functions:
 

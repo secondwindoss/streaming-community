@@ -9,15 +9,17 @@ version: 2
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.10"
+    python: "3.12"
 
-# Build documentation in the docs/ directory with Sphinx
+# Build documentation in the docs/ directory with Sphinx, treating warnings as
+# errors like `make -C docs html` does
 sphinx:
   builder: html
   configuration: docs/source/conf.py
+  fail_on_warning: true
 
-# Optionally declare the Python requirements required to build your docs
+# Install the package together with the docs toolchain
 python:
   install:
   - method: pip
-    path: .[all]
+    path: .[docs]

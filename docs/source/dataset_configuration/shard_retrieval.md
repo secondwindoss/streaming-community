@@ -35,11 +35,11 @@ dataset = StreamingDataset(
 
 ### Multiple streams
 
-If using multiple data sources, specify the `remote` and/or `local` paths for each one in a separate {class}`streaming.Stream` object, and pass those to StreamingDataset's `streams` argument. An example can be found [here](../getting_started/main_concepts.md#Remote-data-streams).
+If using multiple data sources, specify the `remote` and/or `local` paths for each one in a separate {class}`streaming.Stream` object, and pass those to StreamingDataset's `streams` argument. An example can be found [here](../getting_started/main_concepts.md#remote-data-streams).
 
 ### Hash Validation
 
-If you wrote out your dataset shards with specific hash functions (see [here](../preparing_datasets/basic_dataset_conversion.md#Configuring-dataset-writing)) and want to validate them at training time, set the `validate_hash` argument to StreamingDataset. Depending on the hash function, this may slow down data loading.
+If you wrote out your dataset shards with specific hash functions (see [here](../preparing_datasets/basic_dataset_conversion.md#configuring-dataset-writing)) and want to validate them at training time, set the `validate_hash` argument to StreamingDataset. Depending on the hash function, this may slow down data loading.
 <!--pytest.mark.skip-->
 ```python
 dataset = StreamingDataset(
@@ -89,7 +89,7 @@ cache_limit = '10mb'    # also a cache limit of 10mb
 
 ### Keeping compressed shards
 
-If your dataset shards are compressed (see [here](../preparing_datasets/basic_dataset_conversion.md#Configuring-dataset-writing)), StreamingDataset will decompress them upon download for use in training. To control whether the compressed versions of shards are kept locally, use the `keep_zip` flag. This defaults to `False`, meaning that StreamingDataset will default to deleting compressed shards and only keeping the decompressed shards.
+If your dataset shards are compressed (see [here](../preparing_datasets/basic_dataset_conversion.md#configuring-dataset-writing)), StreamingDataset will decompress them upon download for use in training. To control whether the compressed versions of shards are kept locally, use the `keep_zip` flag. This defaults to `False`, meaning that StreamingDataset will default to deleting compressed shards and only keeping the decompressed shards.
 <!--pytest.mark.skip-->
 ```python
 dataset = StreamingDataset(

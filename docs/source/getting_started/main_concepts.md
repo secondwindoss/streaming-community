@@ -46,13 +46,13 @@ As shown above, an `index.json` file is also created for the set of shard files,
             "zip_data": null
         },
         {   // Shard 1, very similar to Shard 0 metadata
-            ...
+            // ...
             "raw_data": {
                 "basename": "shard.00001.mds",
                 "bytes": 67092637,
                 "hashes": {}
             },
-            ...
+            // ...
         },
     // and so on
     ]
