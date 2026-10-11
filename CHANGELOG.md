@@ -11,7 +11,7 @@ First release under the `streaming-community` name. The import name stays `strea
 - Rename the distribution to `streaming-community`; the import name stays `streaming` (#18).
 - Warn at import time when `mosaicml-streaming` is installed in the same environment, and finish the rename in the install hint, the dataset READMEs and the contributor files (#32).
 - Publish releases through PyPI trusted publishing (#19).
-- Point the README logo at an absolute URL so it renders on PyPI (#35), point the README docs links at the streaming-community docs and remove the code of conduct, which linked to MosaicML's community guidelines (#41).
+- Point the README logo and images at absolute URLs so they render on PyPI (#35, #42), point the README docs links at the streaming-community docs and remove the code of conduct, which linked to MosaicML's community guidelines (#41).
 
 ### Dependencies
 
