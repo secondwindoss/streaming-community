@@ -17,7 +17,6 @@ def float_eq(a: float, b: float) -> bool:
     return abs(a - b) < 1e-6
 
 
-@pytest.mark.usefixtures('local_remote_dir')
 @pytest.fixture()
 def root(local_remote_dir: tuple[str, str]):
     root, _ = local_remote_dir
