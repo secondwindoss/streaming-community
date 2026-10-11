@@ -71,7 +71,7 @@ extra_deps['dev'] = [
     'pyarrow>14.0.0',
     'docformatter>=1.4',
     'jupyter==1.1.1',
-    'pre-commit>=2.18.1,<4',
+    'pre-commit>=2.18.1,<5',
     'pytest==8.4.1',
     'pytest_codeblocks==0.18.0',
     'pytest-cov>=4,<7',
