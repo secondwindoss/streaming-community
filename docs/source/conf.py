@@ -149,6 +149,11 @@ html_title = ' Streaming'
 # Customize CSS
 html_css_files = ['css/custom.css', 'https://cdn.jsdelivr.net/npm/@docsearch/css@3']
 
+# Count page views with PostHog only on the published Read the Docs site, not in local builds or
+# pull request previews (READTHEDOCS_VERSION_TYPE is 'external' there).
+if os.environ.get('READTHEDOCS_VERSION_TYPE') in ('branch', 'tag'):
+    html_js_files = ['js/posthog.js']
+
 # MosaicML Streaming logo
 # html_logo = 'https://storage.googleapis.com/docs.mosaicml.com/images/streaming-logo-light-mode.png'
 html_theme_options = {
