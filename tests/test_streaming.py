@@ -733,6 +733,33 @@ def test_dataloader_after_parent_use(local_remote_dir: tuple[str, str], start_me
     assert samples_seen == 117
 
 
+@pytest.mark.timeout(60)
+@pytest.mark.usefixtures('local_remote_dir')
+def test_background_thread_failure_raises(local_remote_dir: tuple[str, str],
+                                          monkeypatch: pytest.MonkeyPatch):
+    """A failing download thread raises from iteration, instead of a short epoch or a hang."""
+    local, remote = local_remote_dir
+    convert_to_mds(out_root=remote,
+                   dataset_name='sequencedataset',
+                   num_samples=117,
+                   size_limit=1 << 8)
+    dataset = StreamingDataset(local=local, remote=remote, batch_size=2)
+
+    def fail(shard_id: int, blocking: bool = True) -> None:
+        raise OSError(f'download of shard {shard_id} failed')
+
+    # Both the download thread and the ready thread hit this, so both die without `on_exit()`.
+    monkeypatch.setattr(dataset, 'prepare_shard', fail)
+    with pytest.raises(RuntimeError, match='download of shard') as info:
+        for _ in dataset:
+            pass
+    assert isinstance(info.value.__cause__, OSError)
+
+    # The failure is permanent for this dataset, and the next epoch reports it right away.
+    with pytest.raises(RuntimeError, match='download of shard'):
+        next(iter(dataset))
+
+
 @pytest.mark.parametrize('batch_size', [4])
 @pytest.mark.parametrize('size_limit', [256, 512])
 @pytest.mark.parametrize('seed', [1111])
