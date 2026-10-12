@@ -98,6 +98,7 @@ extra_deps['docs'] = [
     'sphinx-copybutton>=0.5.2,<1',
     'sphinx-tabs>=3.4.7,<4',
     'sphinxcontrib-katex>=0.9.10,<1',
+    'sphinxext-opengraph>=0.9,<1',
 ]
 
 extra_deps['simulator'] = [
