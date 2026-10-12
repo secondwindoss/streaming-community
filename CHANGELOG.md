@@ -4,6 +4,10 @@ streaming-community is a fork of MosaicML Streaming 0.13.0. Each entry names the
 
 ## Unreleased
 
+### Fixes
+
+- Start DataLoader workers with `fork` after the parent iterated the dataset: a forked child inherited the parent's thread pool without its threads and waited forever. A dataset that is in, or has finished, an epoch also pickles again, so `spawn` and `forkserver` workers no longer fail on it either (#48).
+
 ### Docs
 
 - Shared links show a project card: a social preview image in `.github/`, and Open Graph tags on the documentation through `sphinxext-opengraph` (#47).

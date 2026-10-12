@@ -4,6 +4,7 @@
 import math
 import multiprocessing as mp
 import os
+import pickle
 import shutil
 from multiprocessing import Process
 from typing import Any, Optional
@@ -695,22 +696,39 @@ def test_dataloader_mid_epoch_exit(local_remote_dir: tuple[str, str], num_sample
     assert result == 0
 
 
-@pytest.mark.skipif('fork' not in mp.get_all_start_methods(), reason='Requires fork.')
+@pytest.mark.parametrize('start_method', ['fork', 'spawn', 'forkserver'])
+@pytest.mark.parametrize('parent_use', ['getitem', 'epoch', 'mid_epoch'])
 @pytest.mark.usefixtures('local_remote_dir')
-def test_dataloader_fork_after_parent_use(local_remote_dir: tuple[str, str]):
-    """Forked workers must not fail on a cache filelock the parent created by using the dataset."""
+def test_dataloader_after_parent_use(local_remote_dir: tuple[str, str], start_method: str,
+                                     parent_use: str):
+    """Workers must work after the parent used the dataset, whether forked or started afresh."""
+    if start_method not in mp.get_all_start_methods():
+        pytest.skip(f'Requires {start_method}.')
     local, remote = local_remote_dir
     convert_to_mds(out_root=remote, dataset_name='sequencedataset', num_samples=117)
     dataset = StreamingDataset(local=local, remote=remote, shuffle=False, batch_size=2)
 
-    # Downloading the first shard in the parent takes the cache filelock.
-    dataset[0]
-    assert dataset._cache_filelock is not None
+    if parent_use == 'getitem':
+        # Downloading the first shard in the parent takes the cache filelock.
+        dataset[0]
+        assert dataset._cache_filelock is not None
+    elif parent_use == 'epoch':
+        # A finished epoch leaves the parent's thread pool behind.
+        assert sum(1 for _ in dataset) == 117
+    else:
+        # An epoch in progress leaves its threads running in the parent.
+        iterator = iter(dataset)
+        next(iterator)
 
+    # The dataset must still pickle for spawn and forkserver workers.
+    pickle.dumps(dataset)
+
+    # Forked workers inherit the parent's pool and iterator without their threads.
     dataloader = DataLoader(dataset=dataset,
                             batch_size=2,
                             num_workers=2,
-                            multiprocessing_context=mp.get_context('fork'))
+                            timeout=60,
+                            multiprocessing_context=mp.get_context(start_method))
     samples_seen = sum(batch['sample'].size(dim=0) for batch in dataloader)
     assert samples_seen == 117
 
