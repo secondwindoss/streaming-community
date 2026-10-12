@@ -7,6 +7,7 @@ streaming-community is a fork of MosaicML Streaming 0.13.0. Each entry names the
 ### Fixes
 
 - Start DataLoader workers with `fork` after the parent iterated the dataset: a forked child inherited the parent's thread pool without its threads and waited forever. A dataset that is in, or has finished, an epoch also pickles again, so `spawn` and `forkserver` workers no longer fail on it either (#48).
+- Raise the error of a failed download thread from iteration, with the cause attached, instead of ending the epoch early or waiting forever for the thread. In 0.14.0, a `cache_limit` too tight for a mix of local-only and remote streams hung or returned an empty epoch this way; that case now fails at construction with the limit to set. The ready thread also downloads a shard again if it was evicted while being waited for, and stops at interpreter exit, so a stalled epoch no longer blocks shutdown (#49).
 
 ### Docs
 

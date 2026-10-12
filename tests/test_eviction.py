@@ -1,6 +1,7 @@
 # Copyright 2022-2024 MosaicML Streaming authors
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import multiprocessing as mp
 import operator
 import os
@@ -354,3 +355,36 @@ def test_evict_coldest_skips_local_only_stream(tmp_path: Any):
 
     dataset.evict_coldest_shard()
     assert set(os.listdir(local_only)) == before
+
+
+def test_cache_limit_leaves_room_above_local_only_streams(tmp_path: Any):
+    """A cache limit that local-only shards would fill fails at init, not in a download thread."""
+    remote = tmp_path / 'remote'
+    local_only = tmp_path / 'local_only'
+    with MDSWriter(out=str(remote), columns={'data': 'bytes'}, size_limit=500) as out:
+        for _ in range(200):
+            out.write({'data': b'\0' * 100})
+    copytree(remote, local_only)
+    shards = json.load(open(remote / 'index.json'))['shards']
+    largest = max(shard['raw_data']['bytes'] for shard in shards)
+    # Both index files and the local-only shards stay in the cache for good.
+    floor = 2 * os.path.getsize(remote / 'index.json') + sum(
+        shard['raw_data']['bytes'] for shard in shards)
+
+    def streams() -> list[Stream]:
+        return [
+            Stream(local=str(local_only), remote=None),
+            Stream(local=str(tmp_path / 'cache'), remote=str(remote)),
+        ]
+
+    with pytest.raises(ValueError, match='never evicted'):
+        StreamingDataset(streams=streams(), batch_size=1, cache_limit=floor + 4 * largest - 1)
+
+    # At the bound there is room for four shards: the one being read, the one the ready thread
+    # waits for, and what the download thread fetches ahead, so keep the look-ahead to one shard.
+    dataset = StreamingDataset(streams=streams(),
+                               batch_size=1,
+                               predownload=4,
+                               cache_limit=floor + 4 * largest)
+    assert sum(1 for _ in dataset) == 400
+    assert set(os.listdir(local_only)) == set(os.listdir(remote))
