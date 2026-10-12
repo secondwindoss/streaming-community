@@ -7,6 +7,7 @@ import os
 import pickle
 import shutil
 from multiprocessing import Process
+from time import sleep
 from typing import Any, Optional
 
 import pytest
@@ -14,6 +15,7 @@ from torch.utils.data import DataLoader
 
 from streaming.base import Stream, StreamingDataLoader, StreamingDataset
 from streaming.base.batching import generate_work
+from streaming.base.dataset import _ShardState
 from streaming.base.stream import streams_registry
 from streaming.base.util import clean_stale_shared_memory
 from streaming.base.world import World
@@ -758,6 +760,36 @@ def test_background_thread_failure_raises(local_remote_dir: tuple[str, str],
     # The failure is permanent for this dataset, and the next epoch reports it right away.
     with pytest.raises(RuntimeError, match='download of shard'):
         next(iter(dataset))
+
+
+@pytest.mark.timeout(60)
+@pytest.mark.usefixtures('local_remote_dir')
+def test_ready_thread_requests_evicted_shard(local_remote_dir: tuple[str, str]):
+    """The ready thread must download a shard again if it is evicted while being waited for."""
+    local, remote = local_remote_dir
+    convert_to_mds(out_root=remote,
+                   dataset_name='sequencedataset',
+                   num_samples=117,
+                   size_limit=1 << 8)
+    dataset = StreamingDataset(local=local, remote=remote, batch_size=2, predownload=32)
+    assert dataset.num_shards > 2
+    first, second = dataset.shards[0].samples, dataset.shards[1].samples
+
+    # Pretend another worker is downloading the second shard. The download thread skips it and
+    # moves on to the shards after it, while the ready thread waits for it after the first shard.
+    dataset._shard_states[1] = _ShardState.PREPARING
+    iterator = iter(dataset)
+    assert len([next(iterator) for _ in range(first)]) == first
+    for _ in range(200):
+        if dataset._iterator.prepare_index > first + second:
+            break
+        sleep(0.05)
+    assert dataset._iterator.prepare_index > first + second
+
+    # That worker evicted the shard instead. Only the ready thread can request it again.
+    dataset._shard_states[1] = _ShardState.REMOTE
+    assert next(iterator) is not None
+    assert dataset._shard_states[1] == _ShardState.LOCAL
 
 
 @pytest.mark.parametrize('batch_size', [4])

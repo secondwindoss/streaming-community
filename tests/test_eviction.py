@@ -380,6 +380,11 @@ def test_cache_limit_leaves_room_above_local_only_streams(tmp_path: Any):
     with pytest.raises(ValueError, match='never evicted'):
         StreamingDataset(streams=streams(), batch_size=1, cache_limit=floor + 4 * largest - 1)
 
-    dataset = StreamingDataset(streams=streams(), batch_size=1, cache_limit=floor + 4 * largest)
+    # At the bound there is room for four shards: the one being read, the one the ready thread
+    # waits for, and what the download thread fetches ahead, so keep the look-ahead to one shard.
+    dataset = StreamingDataset(streams=streams(),
+                               batch_size=1,
+                               predownload=4,
+                               cache_limit=floor + 4 * largest)
     assert sum(1 for _ in dataset) == 400
     assert set(os.listdir(local_only)) == set(os.listdir(remote))
