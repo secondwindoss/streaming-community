@@ -2,6 +2,12 @@
 
 streaming-community is a fork of MosaicML Streaming 0.13.0. Each entry names the pull request in this repository.
 
+## Unreleased
+
+### Docs
+
+- Shared links show a project card: a social preview image in `.github/`, and Open Graph tags on the documentation through `sphinxext-opengraph` (#47).
+
 ## 0.14.1 (2026-10-11)
 
 ### Docs

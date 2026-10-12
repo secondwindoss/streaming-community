@@ -71,7 +71,15 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx_tabs.tabs',
     'nbsphinx',
+    'sphinxext.opengraph',
 ]
+
+# Open Graph tags, so a shared docs link shows the project card.
+ogp_site_url = 'https://streaming-community.readthedocs.io/en/latest/'
+ogp_site_name = 'streaming-community'
+ogp_image = 'https://raw.githubusercontent.com/secondwindoss/streaming-community/main/.github/social-preview.png'
+ogp_image_alt = 'streaming-community: the maintained fork of MosaicML Streaming'
+ogp_description_length = 200
 
 
 def _get_commit_sha() -> str:
