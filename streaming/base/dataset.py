@@ -625,7 +625,10 @@ class StreamingDataset(Array, IterableDataset):
                 pass
 
     def __getstate__(self) -> dict[str, Any]:
-        """Get the state to pickle, which leaves out the unpicklable cache filelock.
+        """Get the state to pickle, which leaves out what belongs to this process only.
+
+        That is the cache filelock, which holds a threading lock, and the thread pool, event and
+        iterator of an epoch in progress. The copy starts its own in ``__iter__``.
 
         Returns:
             Dict[str, Any]: The picklable state.
@@ -633,6 +636,8 @@ class StreamingDataset(Array, IterableDataset):
         state = self.__dict__.copy()
         state['_cache_filelock'] = None
         state['_cache_filelock_pid'] = None
+        for name in ('_executor', '_event', '_iterator', '_thread_pid'):
+            state.pop(name, None)
         return state
 
     @property
@@ -1496,17 +1501,22 @@ class StreamingDataset(Array, IterableDataset):
         Returns:
             Iterator[Dict[str, Any]]: Each sample.
         """
-        # Exit the threads that are pre-downloading and iterating the shards for previous epoch, if
-        # it exists.
-        if hasattr(self, '_iterator'):
-            self._iterator.exit()
-
-        # For exception handling.
-        if not hasattr(self, '_executor'):
+        # The thread pool, event and iterator of an epoch belong to the process that started it.
+        # A forked child inherits the objects but none of the threads, so it must start its own:
+        # work submitted to the inherited pool would never run, and waiting for the inherited
+        # iterator's threads to exit would never end.
+        pid = os.getpid()
+        if getattr(self, '_thread_pid', None) != pid:
             self._executor = ThreadPoolExecutor()
-        if not hasattr(self, '_event'):
             self._event = Event()
-        elif self._event.is_set():
+            self._thread_pid = pid
+            if hasattr(self, '_iterator'):
+                del self._iterator
+        elif hasattr(self, '_iterator'):
+            # Exit the threads that are pre-downloading and iterating the shards for the previous
+            # epoch.
+            self._iterator.exit()
+        if self._event.is_set():
             raise RuntimeError('Background thread failed. Check other traceback.')
 
         # Discover where we left off, if there is a checkpoint, or start at the next epoch.
