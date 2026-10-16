@@ -78,8 +78,8 @@ extra_deps['dev'] = [
     'toml==0.10.2',
     'yamllint==1.38.0',
     'moto>=4.0,<6',
-    'fastapi==0.142.4',
-    'pydantic==2.13.5',
+    'fastapi==0.143.0',
+    'pydantic==2.14.1',
     'uvicorn==0.54.0',
     'pytest-split==0.11.0',
     'pytest-timeout>=2.3,<3',
@@ -117,7 +117,7 @@ extra_deps['spark'] = [
 ]
 
 extra_deps['databricks'] = [
-    'databricks-sdk==0.148.0',
+    'databricks-sdk==0.152.0',
 ]
 
 extra_deps['alipan'] = [
