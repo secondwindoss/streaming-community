@@ -392,8 +392,11 @@ def test_cache_limit_leaves_room_above_local_only_streams(tmp_path: Any):
     assert set(os.listdir(local_only)) == set(os.listdir(remote))
 
 
-def _write_small_shards(remote: str, compression: Any = None) -> None:
-    with MDSWriter(out=remote, columns={'data': 'bytes'}, compression=compression,
+def _write_small_shards(remote: str, compression: Any = None, hashes: Any = None) -> None:
+    with MDSWriter(out=remote,
+                   columns={'data': 'bytes'},
+                   compression=compression,
+                   hashes=hashes,
                    size_limit=500) as out:
         for _ in range(200):
             out.write({'data': b'\0'})
@@ -441,3 +444,35 @@ def test_failed_decompression_keeps_shard_local(local_remote_dir: tuple[str, str
     assert dataset._shard_states[0] == _ShardState.LOCAL
     dataset.prepare_shard(0, blocking=False)
     assert os.path.isfile(raw_filename)
+
+
+@pytest.mark.parametrize('compression', [None, 'zstd'])
+def test_checksum_failure_downloads_shard_again(local_remote_dir: tuple[str, str],
+                                                compression: Any):
+    """A downloaded file that fails its checksum is deleted, so the retry downloads it again."""
+    local, remote = local_remote_dir
+    _write_small_shards(remote, compression, hashes=['sha1'])
+    dataset = StreamingDataset(remote=remote, local=local, batch_size=1, validate_hash='sha1')
+    raw_info, zip_info = dataset.shards[0].file_pairs[0]
+    basename = (zip_info or raw_info).basename
+    download = Stream._download_file
+    corrupted = []
+
+    def corrupt_first(self: Stream, from_basename: str, to_basename: Any = None) -> str:
+        filename = download(self, from_basename, to_basename)
+        if from_basename == basename and not corrupted:
+            corrupted.append(filename)
+            with open(filename, 'r+b') as f:
+                f.seek(-1, os.SEEK_END)
+                last = f.read(1)[0]
+                f.seek(-1, os.SEEK_END)
+                f.write(bytes([last ^ 0xff]))
+        return filename
+
+    with patch.object(Stream, '_download_file', corrupt_first):
+        with pytest.raises(ValueError, match='Checksum failure'):
+            dataset.prepare_shard(0)
+        assert not os.path.exists(corrupted[0])
+        dataset.prepare_shard(0)
+    assert dataset._shard_states[0] == _ShardState.LOCAL
+    assert dataset[0]['data'] == b'\0'
