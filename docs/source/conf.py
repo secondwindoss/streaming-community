@@ -212,7 +212,7 @@ intersphinx_mapping = {
     'PIL': ('https://pillow.readthedocs.io/en/stable', None),
     'python': ('https://docs.python.org/3/', None),
     'torch': ('https://pytorch.org/docs/stable/', None),
-    'torchmetrics': ('https://torchmetrics.readthedocs.io/en/latest/', None),
+    'torchmetrics': ('https://lightning.ai/docs/torchmetrics/stable/', None),
     'torchvision': ('https://pytorch.org/vision/stable/', None),
     'transformers': ('https://huggingface.co/docs/transformers/master/en/', None),
 }

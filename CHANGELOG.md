@@ -14,6 +14,7 @@ streaming-community is a fork of MosaicML Streaming 0.13.0. Each entry names the
 ### Docs
 
 - Shared links show a project card: a social preview image in `.github/`, and Open Graph tags on the documentation through `sphinxext-opengraph` (#47).
+- Point the torchmetrics cross-reference inventory at its new address on lightning.ai. The old one now ends in a 404, which failed the documentation build (#55).
 
 ## 0.14.1 (2026-10-11)
 
