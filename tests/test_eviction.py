@@ -8,11 +8,13 @@ import os
 import pickle
 from shutil import copytree, rmtree
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from torch.utils.data import DataLoader
 
 from streaming import MDSWriter, Stream, StreamingDataset
+from streaming.base.dataset import _ShardState
 from tests.common.utils import convert_to_mds
 
 
@@ -388,3 +390,54 @@ def test_cache_limit_leaves_room_above_local_only_streams(tmp_path: Any):
                                cache_limit=floor + 4 * largest)
     assert sum(1 for _ in dataset) == 400
     assert set(os.listdir(local_only)) == set(os.listdir(remote))
+
+
+def _write_small_shards(remote: str, compression: Any = None) -> None:
+    with MDSWriter(out=remote, columns={'data': 'bytes'}, compression=compression,
+                   size_limit=500) as out:
+        for _ in range(200):
+            out.write({'data': b'\0'})
+
+
+def test_failed_download_returns_shard_to_remote(local_remote_dir: tuple[str, str]):
+    """A failed download puts the shard back to REMOTE, so the next call downloads it again."""
+    local, remote = local_remote_dir
+    _write_small_shards(remote)
+    dataset = StreamingDataset(remote=remote, local=local, batch_size=1)
+    download = Stream.prepare_shard
+    calls = []
+
+    def fail_first(self: Stream, shard: Any) -> int:
+        calls.append(shard)
+        if len(calls) == 1:
+            raise OSError('simulated download failure')
+        return download(self, shard)
+
+    with patch.object(Stream, 'prepare_shard', fail_first):
+        with pytest.raises(OSError, match='simulated download failure'):
+            dataset.prepare_shard(0)
+        assert dataset._shard_states[0] == _ShardState.REMOTE
+        dataset.prepare_shard(0, blocking=False)
+    assert dataset._shard_states[0] == _ShardState.LOCAL
+    assert len(calls) == 2
+
+
+def test_failed_decompression_keeps_shard_local(local_remote_dir: tuple[str, str]):
+    """A failed decompression restores LOCAL, so the next call decompresses again."""
+    local, remote = local_remote_dir
+    _write_small_shards(remote, compression='zstd')
+    dataset = StreamingDataset(remote=remote, local=local, batch_size=1, keep_zip=True)
+    dataset.prepare_shard(0)
+    stream = dataset.streams[dataset.stream_per_shard[0]]
+    raw_info, _ = dataset.shards[0].file_pairs[0]
+    raw_filename = os.path.join(stream.local, stream.split, raw_info.basename)
+    os.remove(raw_filename)
+
+    with patch.object(Stream,
+                      'prepare_shard',
+                      side_effect=OSError('simulated decompression failure')):
+        with pytest.raises(OSError, match='simulated decompression failure'):
+            dataset.prepare_shard(0)
+    assert dataset._shard_states[0] == _ShardState.LOCAL
+    dataset.prepare_shard(0, blocking=False)
+    assert os.path.isfile(raw_filename)

@@ -1221,7 +1221,15 @@ class StreamingDataset(Array, IterableDataset):
             lock.release()
 
             # Perform the download (shard will not be modified by others in PREPARING state).
-            delta = stream.prepare_shard(shard)
+            # If it fails, put the shard back to REMOTE so that waiters stop waiting and the next
+            # call downloads it again, instead of leaving it in PREPARING forever.
+            try:
+                delta = stream.prepare_shard(shard)
+            except BaseException:
+                lock.acquire()
+                self._shard_states[shard_id] = _ShardState.REMOTE
+                lock.release()
+                raise
 
             # Download completed, so note the time and transition shard state to LOCAL.
             lock.acquire()
@@ -1258,8 +1266,14 @@ class StreamingDataset(Array, IterableDataset):
                 # Lock the shard.
                 self._shard_states[shard_id] = _ShardState.PREPARING
                 lock.release()  # Unblock other workers.
-                # Decompress and remove zip.
-                delta = stream.prepare_shard(shard)
+                # Decompress and remove zip. If that fails, restore LOCAL so the next call retries.
+                try:
+                    delta = stream.prepare_shard(shard)
+                except BaseException:
+                    lock.acquire()
+                    self._shard_states[shard_id] = _ShardState.LOCAL
+                    lock.release()
+                    raise
                 lock.acquire()  # Briefly take the lock back.
                 # Restore shard state.
                 self._shard_states[shard_id] = _ShardState.LOCAL
