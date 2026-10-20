@@ -404,3 +404,22 @@ def test_forced_race():
             clean_stale_shared_memory()
         except:
             pass
+
+
+@pytest.mark.skipif(not os.path.isdir('/dev/fd'), reason='counts open descriptors in /dev/fd')
+def test_check_and_find_closes_probes(tmp_path: Any):
+    """Probing an existing prefix leaves no shared memory descriptor open."""
+    clean_stale_shared_memory()
+    data = _pack_locals([str(tmp_path / 'theirs')], 0)
+    owner = SharedMemory(_get_path(0, LOCALS), True, len(data), auto_cleanup=False)
+    owner.buf[:len(data)] = data
+    try:
+        # No filelocks in this directory, so every call probes prefix 0.
+        with patch('streaming.base.shared.prefix.gettempdir', return_value=str(tmp_path)):
+            before = len(os.listdir('/dev/fd'))
+            for _ in range(20):
+                assert _check_and_find([str(tmp_path / 'ours')], [None], LOCALS) == 1
+            after = len(os.listdir('/dev/fd'))
+    finally:
+        owner.cleanup()
+    assert after == before

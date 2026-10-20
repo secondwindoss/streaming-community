@@ -144,16 +144,21 @@ def _check_and_find(streams_local: list[str], streams_remote: list[Union[str, No
 
         # Attempt to access shared memory by name. Use prefix_int if files do not exist
         try:
-            shm = SharedMemory(name, False)
+            shm = SharedMemory(name, False, auto_cleanup=False)
         except PermissionError:
             continue
         except FileNotFoundError:
             break
 
+        # The probe only reads the block: copy what is needed and close it now, instead of
+        # leaving it to an atexit handler that keeps it open until the process exits.
+        data = bytes(shm.buf) if shm_name == LOCALS else b''
+        shm.cleanup()
+
         if shm_name != LOCALS:
             continue
 
-        their_locals, _ = _unpack_locals(bytes(shm.buf))
+        their_locals, _ = _unpack_locals(data)
 
         # Do not check for a conflicting local directories across existing shared memory if
         # remote directories are None. Get the next prefix.
