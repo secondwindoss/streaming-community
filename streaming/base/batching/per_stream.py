@@ -59,7 +59,15 @@ def generate_work_per_stream_batching(dataset: StreamingDataset, world: World, e
                                           dataset.num_canonical_nodes, world.num_nodes,
                                           world.ranks_per_node, world.workers_per_rank, batch_size,
                                           0, dataset.initial_physical_nodes)
-        if dataset.shuffle:
+        if dataset.shuffle and samples_in_stream < dataset.num_canonical_nodes:
+            # The shuffle needs at least one sample per canonical node. With fewer, the partition
+            # repeats the samples so that each canonical node holds one, which leaves nothing to
+            # shuffle, so keep the stream in partition order instead of failing.
+            logger.warning(
+                f'Stream with index {stream_id} has {samples_in_stream} samples, fewer than the ' +
+                f'{dataset.num_canonical_nodes} canonical nodes, so its samples are repeated ' +
+                f'and not shuffled.')
+        elif dataset.shuffle:
             # Ratio of stream's shuffle block size to overall shuffle block size should be the
             # same as the ratio of the stream's samples to overall samples.
             # This ensures that the overall training shuffle block size is still approximately
@@ -67,7 +75,8 @@ def generate_work_per_stream_batching(dataset: StreamingDataset, world: World, e
             if not isinstance(dataset.shuffle_block_size, int):
                 raise TypeError(f'Dataset `shuffle_block_size` must be an integer. ' +
                                 f'Got {type(dataset.shuffle_block_size)} instead.')
-            shuffle_block_portion = int(dataset.shuffle_block_size * stream.proportion)
+            # A stream whose share rounds down to zero gets a shuffle block of one sample.
+            shuffle_block_portion = max(1, int(dataset.shuffle_block_size * stream.proportion))
             stream_shuffle = get_shuffle(dataset.shuffle_algo, shuffle_units,
                                          dataset.num_canonical_nodes, dataset.shuffle_seed, epoch,
                                          shuffle_block_portion)
