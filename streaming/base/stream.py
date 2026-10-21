@@ -337,6 +337,10 @@ class Stream:
                     f'validation does not match with those provided during dataset ' +
                     f'creation `{sorted(zip_info.hashes.keys())}`. Provide one of those.')
             if get_hash(self.validate_hash, data) != zip_info.hashes[self.validate_hash]:
+                # Delete a corrupt cached copy so that the next attempt downloads it again,
+                # unless the local directory holds the dataset itself.
+                if self.remote not in {None, self.local}:
+                    os.remove(zip_filename)
                 raise ValueError(f'Checksum failure: {zip_filename}')
 
         # Decompress and save that.
@@ -408,6 +412,9 @@ class Stream:
                             f'creation `{sorted(raw_info.hashes.keys())}`. Provide one of those.')
                     data = open(raw_filename, 'rb').read()
                     if get_hash(self.validate_hash, data) != raw_info.hashes[self.validate_hash]:
+                        # Delete the corrupt download so that the next attempt fetches it again.
+                        if self.remote not in {None, self.local}:
+                            os.remove(raw_filename)
                         raise ValueError(f'Checksum failure: {raw_filename}')
         return delta
 
