@@ -125,17 +125,24 @@ def generate_work_device_per_stream_batching(dataset: StreamingDataset, world: W
             stream_samples_inorder = stream_samples_inorder.reshape(-1, batch_size)
             num_full_batches = np.count_nonzero(np.min(stream_samples_inorder, axis=1) >= 0)
             per_node_batches_per_stream.append(num_full_batches)
+            if num_full_batches == 0:
+                # Skip the stream on this node rather than fail the epoch, as long as another
+                # stream can still fill device batches here.
+                logger.warning(
+                    f'Stream with index {stream_idx} does not have an adequate number of ' +
+                    f'samples to construct even a single device batch of size {batch_size} ' +
+                    f'on node {node}. Training will occur without any samples from this stream ' +
+                    f'on that node.')
+                continue
             if num_full_batches != stream_samples_inorder.shape[0]:
                 logger.warning(
                     f'Because of the `device_per_stream` batching method, some batches with an inadequate '
                     + f'number of samples from stream with index {stream_idx} will be dropped.')
-            if num_full_batches > 0:
-                per_node_stream_partitions.append(stream_samples_inorder[:num_full_batches])
-            else:
-                raise ValueError(
-                    f'Stream with index {stream_idx} does not have an adequate number of ' +
-                    f'samples to construct even a single device batch of size {batch_size}. ' +
-                    f'Training will occur without any samples from this stream!')
+            per_node_stream_partitions.append(stream_samples_inorder[:num_full_batches])
+
+        if not per_node_stream_partitions:
+            raise ValueError(f'No stream has an adequate number of samples to construct a ' +
+                             f'single device batch of size {batch_size} on node {node}.')
 
         batches_per_stream.append(per_node_batches_per_stream)
         batches_from_partitions.append(per_node_stream_partitions)
