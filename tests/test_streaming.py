@@ -316,6 +316,64 @@ def test_dataloader_device_per_stream_batching(local_remote_dir: tuple[str, str]
             assert (device_batch >= 200).all()
 
 
+def _two_stream_partition(local_remote_dir: tuple[str, str], batching_method: str, batch_size: int,
+                          **kwargs: Any) -> Any:
+    """Partition a dataset of a 200-sample stream and a 50-sample stream for one device."""
+    local, remote = local_remote_dir
+    streams = []
+    for index, (num_samples, offset) in enumerate([(200, 0), (50, 600)]):
+        convert_to_mds(out_root=os.path.join(remote, f'stream{index}'),
+                       dataset_name='sequencedataset',
+                       num_samples=num_samples,
+                       offset=offset,
+                       size_limit=1 << 8)
+        streams.append(
+            Stream(local=os.path.join(local, f'stream{index}'),
+                   remote=os.path.join(remote, f'stream{index}'),
+                   proportion=kwargs.pop(f'proportion{index}', None)))
+    kwargs.setdefault('shuffle_block_size', 100)
+    dataset = StreamingDataset(streams=streams,
+                               shuffle=True,
+                               batch_size=batch_size,
+                               shuffle_seed=2222,
+                               num_canonical_nodes=8,
+                               batching_method=batching_method,
+                               **kwargs)
+    world = World(num_nodes=1, ranks_per_node=1, workers_per_rank=1, worker=0)
+    partition = generate_work(batching_method, dataset, world, 0, 0)
+    return partition.reshape(-1, batch_size)
+
+
+@pytest.mark.parametrize('batching_method', ['per_stream', 'stratified', 'device_per_stream'])
+@pytest.mark.usefixtures('local_remote_dir')
+def test_stream_smaller_than_canonical_nodes(local_remote_dir: tuple[str, str],
+                                             batching_method: str):
+    """A stream with fewer samples than canonical nodes is used unshuffled instead of failing."""
+    # An epoch of 24 samples gives the second stream 6, fewer than the 8 canonical nodes.
+    batches = _two_stream_partition(local_remote_dir,
+                                    batching_method,
+                                    4,
+                                    proportion0=0.75,
+                                    proportion1=0.25,
+                                    epoch_size=24)
+    samples = batches[batches >= 0]
+    assert ((samples >= 200) & (samples < 250)).any()
+    if batching_method != 'stratified':
+        for batch in batches:
+            assert (batch < 200).all() or (batch >= 200).all()
+
+
+@pytest.mark.parametrize('batching_method', ['per_stream', 'stratified', 'device_per_stream'])
+@pytest.mark.usefixtures('local_remote_dir')
+def test_stream_share_of_shuffle_block_below_one(local_remote_dir: tuple[str, str],
+                                                 batching_method: str):
+    """A stream whose share of the shuffle block rounds down to zero is still shuffled and used."""
+    # The second stream is a fifth of the samples, so its share of a 3-sample block is 0.6.
+    batches = _two_stream_partition(local_remote_dir, batching_method, 8, shuffle_block_size=3)
+    samples = batches[batches >= 0]
+    assert ((samples >= 200) & (samples < 250)).any()
+
+
 @pytest.mark.parametrize('batch_size', [4, 7])
 @pytest.mark.parametrize('seed', [2222])
 @pytest.mark.parametrize('shuffle', [True])
