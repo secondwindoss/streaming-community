@@ -2,7 +2,16 @@
 
 streaming-community is a fork of MosaicML Streaming 0.13.0. Each entry names the pull request in this repository.
 
-## Unreleased
+## 0.14.2 (2026-10-23)
+
+Fixes for shared memory, shard downloads, DataLoader workers and per-stream batching. The public API, the shard formats, `index.json` and the `state_dict` keys are unchanged.
+
+If `mosaicml-streaming` is installed, uninstall it first. Both distributions install the same `streaming` package, so whichever is installed last overwrites the other's files, and uninstalling one later deletes files the other needs:
+
+```bash
+pip uninstall mosaicml-streaming
+pip install --upgrade streaming-community
+```
 
 ### Fixes
 
@@ -16,6 +25,7 @@ streaming-community is a fork of MosaicML Streaming 0.13.0. Each entry names the
 
 ### Docs
 
+- Restructure the README, which is also the PyPI project page: what the project does and why to use it come first, and the rest is in tables (#46).
 - Shared links show a project card: a social preview image in `.github/`, and Open Graph tags on the documentation through `sphinxext-opengraph` (#47).
 - Point the torchmetrics cross-reference inventory at its new address on lightning.ai. The old one now ends in a 404, which failed the documentation build (#55).
 
