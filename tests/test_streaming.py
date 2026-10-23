@@ -374,6 +374,55 @@ def test_stream_share_of_shuffle_block_below_one(local_remote_dir: tuple[str, st
     assert ((samples >= 200) & (samples < 250)).any()
 
 
+def _multi_node_partition(local_remote_dir: tuple[str, str], batching_method: str,
+                          stream_sizes: list[int]) -> Any:
+    """Partition streams of the given sizes over 2 nodes of 2 ranks, with batch size 4."""
+    local, remote = local_remote_dir
+    streams = []
+    for index, num_samples in enumerate(stream_sizes):
+        convert_to_mds(out_root=os.path.join(remote, f'stream{index}'),
+                       dataset_name='sequencedataset',
+                       num_samples=num_samples,
+                       size_limit=1 << 8)
+        streams.append(
+            Stream(local=os.path.join(local, f'stream{index}'),
+                   remote=os.path.join(remote, f'stream{index}')))
+    dataset = StreamingDataset(streams=streams,
+                               shuffle=True,
+                               batch_size=4,
+                               shuffle_seed=2222,
+                               num_canonical_nodes=2,
+                               batching_method=batching_method,
+                               shuffle_block_size=100)
+    world = World(num_nodes=2, ranks_per_node=2, workers_per_rank=1, worker=0)
+    return generate_work(batching_method, dataset, world, 0, 0)
+
+
+@pytest.mark.parametrize('batching_method', ['per_stream', 'device_per_stream'])
+@pytest.mark.usefixtures('local_remote_dir')
+def test_stream_too_small_for_a_batch_is_skipped(local_remote_dir: tuple[str, str],
+                                                 batching_method: str, caplog: Any):
+    """A stream that cannot fill one batch is left out of the epoch with a warning."""
+    # The third stream has one sample, so each node gets one copy of it, short of a batch of 4.
+    partition = _multi_node_partition(local_remote_dir, batching_method, [400, 300, 1])
+    assert 'Training will occur without any samples from this stream' in caplog.text
+    samples = partition[partition >= 0]
+    assert (samples < 400).any() and ((samples >= 400) & (samples < 700)).any()
+    assert not (samples == 700).any()
+    # Each device batch, in training order, still comes from a single stream.
+    for batch in partition.transpose(3, 2, 0, 1, 4).reshape(-1, 4):
+        real = batch[batch >= 0]
+        assert (real < 400).all() or (real >= 400).all()
+
+
+@pytest.mark.parametrize('batching_method', ['per_stream', 'device_per_stream'])
+@pytest.mark.usefixtures('local_remote_dir')
+def test_no_stream_fills_a_batch(local_remote_dir: tuple[str, str], batching_method: str):
+    """If no stream can fill one batch, the epoch fails with a clear error."""
+    with pytest.raises(ValueError, match='No stream has an adequate number of samples'):
+        _multi_node_partition(local_remote_dir, batching_method, [1, 1])
+
+
 @pytest.mark.parametrize('batch_size', [4, 7])
 @pytest.mark.parametrize('seed', [2222])
 @pytest.mark.parametrize('shuffle', [True])

@@ -100,16 +100,23 @@ def generate_work_per_stream_batching(dataset: StreamingDataset, world: World, e
             -1, batch_size * world.ranks_per_node * world.num_nodes)
         num_full_batches = np.count_nonzero(np.min(global_batches_inorder, axis=1) >= 0)
         batches_per_stream.append(num_full_batches)
+        if num_full_batches == 0:
+            # Skip the stream for this epoch rather than fail it, as long as another stream
+            # can still fill global batches.
+            logger.warning(
+                f'Stream with index {stream_idx} does not have an adequate number of samples to ' +
+                f'construct a complete global batch. Training will occur without any samples ' +
+                f'from this stream.')
+            continue
         if num_full_batches != global_batches_inorder.shape[0]:
             logger.warning(
                 f'Because of the `per_stream` batching method, some batches with an inadequate ' +
                 f'number of samples from stream with index {stream_idx} will be dropped.')
-        if num_full_batches > 0:
-            batches_from_partitions.append(global_batches_inorder[:num_full_batches])
-        else:
-            raise ValueError(f'Stream with index {stream_idx} does not have an adequate number ' +
-                             f'of samples to construct a complete global batch. Training will ' +
-                             f'occur without any samples from this stream.')
+        batches_from_partitions.append(global_batches_inorder[:num_full_batches])
+
+    if not batches_from_partitions:
+        raise ValueError(f'No stream has an adequate number of samples to construct a complete ' +
+                         f'global batch.')
 
     # Combine all global batches from all streams into one array.
     all_partition_batches = np.concatenate(batches_from_partitions)
