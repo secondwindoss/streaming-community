@@ -72,14 +72,14 @@ extra_deps['dev'] = [
     'docformatter>=1.4',
     'jupyter==1.1.1',
     'pre-commit>=2.18.1,<5',
-    'pytest==9.1.1',
+    'pytest==9.2.0',
     'pytest_codeblocks==0.18.0',
     'pytest-cov>=4,<8',
     'toml==0.10.2',
     'yamllint==1.38.0',
     'moto>=4.0,<6',
-    'fastapi==0.162.0',
-    'pydantic==2.14.1',
+    'fastapi==0.162.2',
+    'pydantic==2.14.3',
     'uvicorn==0.54.0',
     'pytest-split==0.11.0',
     'pytest-timeout>=2.3,<3',
@@ -117,7 +117,7 @@ extra_deps['spark'] = [
 ]
 
 extra_deps['databricks'] = [
-    'databricks-sdk==0.157.0',
+    'databricks-sdk==0.164.0',
 ]
 
 extra_deps['alipan'] = [
